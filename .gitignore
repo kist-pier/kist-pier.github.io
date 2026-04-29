@@ -2,6 +2,7 @@ _site
 .bundle
 .DS_store
 .idea
+.vscode
 .jekyll-cache
 .jekyll-metadata
 .ruby-version
@@ -9,7 +10,14 @@ _site
 .tweet-cache
 .venv
 assets/libs/
-assets/rendercv/rendercv_output/*.typ
-Gemfile.lock
 node_modules/
 vendor
+
+# Local agent / IDE config
+.claude/
+.gemini/
+
+# OS / editor cruft
+*.swp
+*.swo
+Thumbs.db
