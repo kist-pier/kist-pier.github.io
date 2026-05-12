@@ -2,7 +2,7 @@
 
 The official website of **PIER Lab** — *Physical Intelligence & Embodied Robotics Lab* at the Center for Humanoid Research, Korea Institute of Science and Technology (KIST).
 
-- **Live site**: https://kist-pier.github.io
+- **Live site**: https://pier-lab.kr
 - **Repository**: https://github.com/kist-pier/kist-pier.github.io
 - **PI**: Dr. Keunwoo Jang (장근우) — `jang90 [at] kist.re.kr`
 - **Theme base**: [al-folio](https://github.com/alshedivat/al-folio) (heavily customized for PIER Lab)
@@ -206,7 +206,7 @@ Edit `_data/positions.yml`. Set `open: false` to grey out a position without del
 `_config.yml`. Common keys:
 
 - `title`, `description` — site identity
-- `url`, `baseurl` — `https://kist-pier.github.io` and empty
+- `url`, `baseurl` — `https://pier-lab.kr` and empty
 - `scholar.last_name`, `scholar.first_name` — controls the Scholar citation count
 
 Restart Docker after editing `_config.yml`.
@@ -270,7 +270,7 @@ Avoid editing files under `_sass/` other than `_custom.scss` — those are theme
 
 ## 9. Quick links for new maintainers
 
-- Live site: <https://kist-pier.github.io>
+- Live site: <https://pier-lab.kr>
 - Actions / build status: <https://github.com/kist-pier/kist-pier.github.io/actions>
 - Jekyll docs: <https://jekyllrb.com/docs/>
 - Jekyll Scholar (publications): <https://github.com/inukshuk/jekyll-scholar>
