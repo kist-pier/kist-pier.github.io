@@ -12,8 +12,9 @@ description: > # the ">" symbol means to ignore newlines until "footer_text:"
   We study physical intelligence — enabling robots to manipulate, perceive, and reason in the real world through embodied interaction.
 footer_text: >
   © {{ site.time | date: '%Y' }} Physical Intelligence & Embodied Robotics Laboratory, KIST.
-keywords: robotics, embodied-AI, physical-intelligence, KIST, research-lab
+keywords: PIER Lab, KIST PIER, PIER 연구실, Physical Intelligence, Embodied Robotics, robotics, embodied-AI, physical-intelligence, KIST, 한국과학기술연구원, Keunwoo Jang, 장근우, humanoid, manipulation, whole-body control, visuomotor policy
 lang: en # the language of your site (for example: en, fr, cn, ru, etc.)
+timezone: Asia/Seoul
 icon: 🤖 # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
 
 url: https://pier-lab.kr # the base hostname & protocol for your site
@@ -67,8 +68,8 @@ max_width: 1100px
 # Display links to the page with a preview object on social media.
 # see https://schema.org/docs/faq.html for more information
 serve_og_meta: true # Include Open Graph meta tags in the HTML head
-serve_schema_org: false # Include Schema.org in the HTML head
-og_image: # The site-wide (default for all links) Open Graph preview image
+serve_schema_org: false # Include Schema.org in the HTML head (custom ResearchOrganization JSON-LD is added via _includes/structured-data.liquid)
+og_image: https://pier-lab.kr/assets/img/logo.png # The site-wide (default for all links) Open Graph preview image
 
 # -----------------------------------------------------------------------------
 # Analytics and search engine verification

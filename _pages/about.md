@@ -2,6 +2,7 @@
 layout: home
 title: Home
 permalink: /
+description: "PIER Lab at KIST — research on physical intelligence and embodied robotics: force-aware control, visuomotor policies, and whole-body coordination led by Dr. Keunwoo Jang."
 
 announcements:
   enabled: true

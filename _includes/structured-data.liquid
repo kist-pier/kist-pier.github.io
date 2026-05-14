@@ -1,0 +1,46 @@
+<!-- Schema.org JSON-LD for search engine understanding (Google, Naver) -->
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ResearchOrganization",
+    "name": "PIER Lab",
+    "alternateName": [
+      "Physical Intelligence & Embodied Robotics Laboratory",
+      "KIST PIER Lab",
+      "PIER 연구실"
+    ],
+    "url": "{{ site.url }}",
+    "logo": "{{ site.url }}/assets/img/logo.png",
+    "image": "{{ site.url }}/assets/img/logo.png",
+    "description": "{{ site.description | strip_newlines | strip }}",
+    "parentOrganization": {
+      "@type": "ResearchOrganization",
+      "name": "Korea Institute of Science and Technology",
+      "alternateName": ["KIST", "한국과학기술연구원"],
+      "url": "https://www.kist.re.kr"
+    },
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Seoul",
+      "addressCountry": "KR"
+    },
+    "employee": {
+      "@type": "Person",
+      "name": "Keunwoo Jang",
+      "alternateName": "장근우",
+      "jobTitle": "Principal Investigator, Senior Researcher",
+      "affiliation": {
+        "@type": "ResearchOrganization",
+        "name": "Korea Institute of Science and Technology"
+      },
+      "sameAs": [
+        "https://scholar.google.com/citations?user=WveMircAAAAJ&hl=ko",
+        "https://github.com/jkw0701"
+      ]
+    },
+    "sameAs": [
+      "https://github.com/kist-pier",
+      "https://scholar.google.com/citations?user=WveMircAAAAJ&hl=ko"
+    ]
+  }
+</script>
