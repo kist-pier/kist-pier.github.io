@@ -37,6 +37,8 @@
     {% else %}
       {{ page.title }} | {{ title }}
     {% endif %}
+  {% elsif page.url == '/' %}
+    {{ title }} (PIERLab) — Physical Intelligence & Embodied Robotics Lab @ KIST
   {% else %}
     {{ title }}
   {% endif %}

@@ -12,7 +12,7 @@ description: > # the ">" symbol means to ignore newlines until "footer_text:"
   We study physical intelligence — enabling robots to manipulate, perceive, and reason in the real world through embodied interaction.
 footer_text: >
   © {{ site.time | date: '%Y' }} Physical Intelligence & Embodied Robotics Laboratory, KIST.
-keywords: PIER Lab, KIST PIER, PIER 연구실, Physical Intelligence, Embodied Robotics, robotics, embodied-AI, physical-intelligence, KIST, 한국과학기술연구원, Keunwoo Jang, 장근우, humanoid, manipulation, whole-body control, visuomotor policy
+keywords: PIERLab, PIER Lab, KIST PIERLab, KIST PIER, PIER 연구실, Physical Intelligence, Embodied Robotics, robotics, embodied-AI, physical-intelligence, KIST, 한국과학기술연구원, Keunwoo Jang, 장근우, humanoid, manipulation, whole-body control, visuomotor policy
 lang: en # the language of your site (for example: en, fr, cn, ru, etc.)
 timezone: Asia/Seoul
 icon: 🤖 # the emoji used as the favicon (alternatively, provide image name in /assets/img/)
