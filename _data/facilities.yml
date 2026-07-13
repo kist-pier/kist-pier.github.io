@@ -8,6 +8,6 @@ facilities:
     image: /assets/img/lab-equipment/gpu_server.jpg
     specs:
       - "RTX 3090 × 2EA"
-      - "RTX PRO 4000 (Blackwell) × 3EA"
-      - "RTX PRO 6000 (Blackwell) × 8EA <span class=\"equipment-badge\">Upcoming</span>"
+      - "RTX PRO 4000 (Blackwell) × 5EA"
+      - "RTX PRO 6000 (Blackwell) × 8EA"
       - "A6000 × 10EA"

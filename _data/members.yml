@@ -86,63 +86,47 @@ research_interns:
       - "Reinforcement Learning"
     email: "0926106@kist.re.kr"
 
-  - name_en: "Suhyeon Pyo"
-    name_ko: "표수현"
+  - name_en: "Taehun Choi"
+    name_ko: "최태훈"
     role: "Intern Researcher"
-    image: /assets/img/members/suhyeon_pyo.jpg
+    image: /assets/img/members/taehun_choi.jpg
     education:
-      - "M.S. Department of Artificial Intelligence, Ajou University (Graduated: 2025)"
-      - "B.S. Department of Electrical and Computer Engineering, Ajou University (Graduated: 2023)"
+      - "M.E. Department of Mechanical Systems Engineering, Kookmin University"
+      - "B.E. Department of Biomedical Engineering, Korea University"
+    research_areas:
+      - "Whole-Body Teleoperation"
+      - "Dynamic Locomotion"
+    email: "kptro@kist.re.kr"
+
+undergrad:
+  - name_en: "Wonseok Choi"
+    name_ko: "최원석"
+    role: "Undergraduate Student Researcher"
+    image: /assets/img/members/wonseok_choi.jpg
+    education:
+      - "Department of Artificial Intelligence, University of Seoul"
     research_areas:
       - "Vision-Language-Action (VLA)"
       - "Transfer Learning"
-    email: "0926108@kist.re.kr"
+    email: "wonseok.choi@kist.re.kr"
 
-undergrad:
-  - name_en: "Junsoo Park"
-    name_ko: "박준수"
+  - name_en: "Kangyeon Kim"
+    name_ko: "김강연"
     role: "Undergraduate Student Researcher"
-    image: /assets/img/members/junsoo_park.jpg
+    image: /assets/img/members/kangyeon_kim.jpg
     education:
-      - "School of Mechanical Engineering, Sungkyunkwan University"
-    research_areas:
-      - "Force-Aware Policy"
-      - "Multimodal Learning"
-    email: "t25345@kist.re.kr"
-
-  - name_en: "Changwoo Shin"
-    name_ko: "신창우"
-    role: "Undergraduate Student Researcher"
-    image: /assets/img/members/changwoo_shin.jpg
-    education:
-      - "School of Mechanical Engineering, Korea University"
-    research_areas:
-      - "Vision-Language-Action (VLA)"
-      - "Foundation Models"
-    email: "t25668@kist.re.kr"
-
-  - name_en: "Byeol Nam"
-    name_ko: "남별"
-    role: "Undergraduate Student Researcher"
-    education:
-      - "Division of Mechanical and Biomedical Engineering, Ewha Womans University"
-    research_areas:
-      - "Medical Robotics"
-      - "Teleoperation"
-    email: "u260134@kist.re.kr"
-
-  - name_en: "Taehyun Lee"
-    name_ko: "이태현"
-    role: "Undergraduate Student Researcher"
-    image: /assets/img/members/taehyun_lee.jpg
-    education:
-      - "Department of Mechanical and Information Engineering, University of Seoul"
+      - "Department of Physics and Mechanical Engineering, Sungkyunkwan University"
     research_areas:
       - "Hardware Design and Systems"
-    email: "taehyeon@kist.re.kr"
+    email: "u260223@kist.re.kr"
 
 alumni:
   intern_alumni:
+    - name_en: "Suhyeon Pyo"
+      period: "2026.03 ~ 2026.06"
+      affiliation: "Department of Artificial Intelligence, Ajou University"
+      next: ""
+
     - name_en: "Seungseop Lee"
       period: "2025.07 ~ 2026.02"
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
@@ -159,6 +143,26 @@ alumni:
       next: ""
 
   undergrad_alumni:
+    - name_en: "Taehyun Lee"
+      period: "2026.03 ~ 2026.06"
+      affiliation: "Department of Mechanical and Information Engineering, University of Seoul"
+      next: "HD Hyundai Electric"
+
+    - name_en: "Byeol Nam"
+      period: "2026.03 ~ 2026.06"
+      affiliation: "Division of Mechanical and Biomedical Engineering, Ewha Womans University"
+      next: ""
+
+    - name_en: "Changwoo Shin"
+      period: "2026.01 ~ 2026.06"
+      affiliation: "School of Mechanical Engineering, Korea University"
+      next: "Hyundai Mobis"
+
+    - name_en: "Junsoo Park"
+      period: "2025.07 ~ 2026.06"
+      affiliation: "School of Mechanical Engineering, Sungkyunkwan University"
+      next: "M.S. at Robotics Program, KAIST"
+
     - name_en: "Taekgeun Nam"
       period: "2025.09 ~ 2026.02"
       affiliation: "Department of Mechanical Engineering, KAIST"
