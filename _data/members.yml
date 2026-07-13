@@ -91,8 +91,8 @@ research_interns:
     role: "Intern Researcher"
     image: /assets/img/members/taehun_choi.jpg
     education:
-      - "M.E. Department of Mechanical Systems Engineering, Kookmin University"
-      - "B.E. Department of Biomedical Engineering, Korea University"
+      - "M.S. Department of Mechanical Systems Engineering, Kookmin University"
+      - "B.S. Department of Biomedical Engineering, Korea University"
     research_areas:
       - "Whole-Body Teleoperation"
       - "Dynamic Locomotion"
