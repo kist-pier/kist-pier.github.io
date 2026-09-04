@@ -1,0 +1,28 @@
+{% assign person = include.person %}
+{% assign cv_file = nil %}
+{% if person.cv and person.cv != "" %}
+  {% assign cv_file = site.static_files | where: "path", person.cv | first %}
+{% endif %}
+
+{% if person.email or person.github or cv_file %}
+  <div class="member-links" aria-label="{{ person.name_en }} links">
+    {% if person.email and person.email != "" %}
+      <a href="mailto:{{ person.email }}" class="member-link" aria-label="Email {{ person.name_en }}">
+        <i class="fa-solid fa-envelope"></i>
+        <span>{{ person.email }}</span>
+      </a>
+    {% endif %}
+    {% if person.github and person.github != "" %}
+      <a href="{{ person.github }}" target="_blank" rel="noopener" class="member-link" title="GitHub" aria-label="{{ person.name_en }} on GitHub">
+        <i class="fa-brands fa-github"></i>
+        <span>GitHub</span>
+      </a>
+    {% endif %}
+    {% if cv_file %}
+      <a href="{{ person.cv | relative_url }}" target="_blank" rel="noopener" class="member-link" title="CV" aria-label="{{ person.name_en }} CV">
+        <i class="fa-solid fa-file-lines"></i>
+        <span>CV</span>
+      </a>
+    {% endif %}
+  </div>
+{% endif %}

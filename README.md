@@ -136,6 +136,7 @@ File: **`_data/members.yml`**
 - New intern: append under `research_interns:`.
 - New undergrad: append under `undergrad:`.
 - A member who left: move their block from the active section to `alumni.intern_alumni` or `alumni.undergrad_alumni`, drop fields not needed for alumni (`email`, `image`, etc.), and add `period:` and `next:`.
+- Optional member links: add `github:` for a GitHub profile and `cv:` for a public CV PDF under `assets/pdf/`. Buttons are shown only when the corresponding field exists.
 
 Photo workflow:
 
@@ -151,6 +152,8 @@ Create `_news/YYYY-MM-DD-short-slug.md`:
 ---
 layout: post
 date: 2026-04-29 09:00:00+0900
+# Optional: override the date text shown in the News table (sorting still uses `date`)
+display_date: "Jun–Jul 2026"
 inline: true
 related_posts: false
 ---

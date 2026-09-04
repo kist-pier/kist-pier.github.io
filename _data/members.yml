@@ -61,6 +61,7 @@ ms:
       - "Visuomotor Policy"
       - "Model-based Control"
     email: "dkapqef@kist.re.kr"
+    github: "https://github.com/Seung-Sub"
 
   - name_en: "Namyoon Kim"
     name_ko: "김남윤"
@@ -73,6 +74,7 @@ ms:
       - "Visuomotor Policy"
       - "Teleoperation"
     email: "knykist@kist.re.kr"
+    github: "https://github.com/kimnamyoon9"
 
 research_interns:
   - name_en: "Seungwon Jang"
@@ -85,6 +87,7 @@ research_interns:
       - "Imitation Learning"
       - "Reinforcement Learning"
     email: "0926106@kist.re.kr"
+    github: "https://github.com/seungwon-jang"
 
   - name_en: "Taehun Choi"
     name_ko: "최태훈"
@@ -109,16 +112,8 @@ undergrad:
       - "Vision-Language-Action (VLA)"
       - "Transfer Learning"
     email: "wonseok.choi@kist.re.kr"
-
-  - name_en: "Kangyeon Kim"
-    name_ko: "김강연"
-    role: "Undergraduate Student Researcher"
-    image: /assets/img/members/kangyeon_kim.jpg
-    education:
-      - "Department of Physics and Mechanical Engineering, Sungkyunkwan University"
-    research_areas:
-      - "Hardware Design and Systems"
-    email: "u260223@kist.re.kr"
+    github: "https://github.com/seok-AI"
+    cv: /assets/pdf/wonseok_choi_cv.pdf
 
 alumni:
   intern_alumni:
@@ -130,7 +125,7 @@ alumni:
     - name_en: "Seungseop Lee"
       period: "2025.07 ~ 2026.02"
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
-      next: ""
+      next: "M.S. at PIER Lab, KIST (Yonsei University)"
 
     - name_en: "Jiyeon Jeong"
       period: "2025.07 ~ 2026.03"
@@ -140,9 +135,14 @@ alumni:
     - name_en: "Namyoon Kim"
       period: "2026.01 ~ 2026.02"
       affiliation: "School of Mechanical Engineering, Korea University"
-      next: ""
+      next: "M.S. at PIER Lab, KIST (Korea University)"
 
   undergrad_alumni:
+    - name_en: "Kangyeon Kim"
+      period: "2026.07 ~ 2026.08"
+      affiliation: "Department of Physics and Mechanical Engineering, Sungkyunkwan University"
+      next: ""
+
     - name_en: "Taehyun Lee"
       period: "2026.03 ~ 2026.06"
       affiliation: "Department of Mechanical and Information Engineering, University of Seoul"
@@ -181,12 +181,12 @@ alumni:
     - name_en: "Namyoon Kim"
       period: "2025.03 ~ 2025.12"
       affiliation: "School of Mechanical Engineering, Korea University"
-      next: ""
+      next: "M.S. at PIER Lab, KIST (Korea University)"
 
     - name_en: "Seungseop Lee"
       period: "2024.12 ~ 2025.06"
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
-      next: ""
+      next: "M.S. at PIER Lab, KIST (Yonsei University)"
 
     - name_en: "Jiyeon Jeong"
       period: "2024.12 ~ 2025.06"

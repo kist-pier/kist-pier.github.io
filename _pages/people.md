@@ -45,21 +45,7 @@ nav: false
           {% endfor %}
         </div>
       {% endif %}
-      {% if person.email and person.email != "" %}
-        <div class="member-email"><i class="fa-solid fa-envelope"></i> {{ person.email }}</div>
-      {% endif %}
-      <div class="member-links">
-        {% if person.scholar %}
-          <a href="{{ person.scholar }}" target="_blank" rel="noopener" class="member-link" title="Google Scholar">
-            <i class="fa-solid fa-graduation-cap"></i>
-          </a>
-        {% endif %}
-        {% if person.github %}
-          <a href="{{ person.github }}" target="_blank" rel="noopener" class="member-link" title="GitHub">
-            <i class="fa-brands fa-github"></i>
-          </a>
-        {% endif %}
-      </div>
+      {% include member_links.liquid person=person %}
     </div>
   </div>
   {% endfor %}
@@ -102,9 +88,7 @@ nav: false
           {% endfor %}
         </div>
       {% endif %}
-      {% if person.email and person.email != "" %}
-        <div class="member-email"><i class="fa-solid fa-envelope"></i> {{ person.email }}</div>
-      {% endif %}
+      {% include member_links.liquid person=person %}
     </div>
   </div>
   {% endfor %}
@@ -147,9 +131,7 @@ nav: false
           {% endfor %}
         </div>
       {% endif %}
-      {% if person.email and person.email != "" %}
-        <div class="member-email"><i class="fa-solid fa-envelope"></i> {{ person.email }}</div>
-      {% endif %}
+      {% include member_links.liquid person=person %}
     </div>
   </div>
   {% endfor %}
