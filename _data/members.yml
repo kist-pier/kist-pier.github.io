@@ -110,6 +110,7 @@ research_interns:
     name_en: "Jiyeon Joung"
     name_ko: "정지연"
     role: "Intern Researcher"
+    image: /assets/img/members/jiyeon_joung.jpg
     education:
       - "B.S. Department of Software, Sungkyunkwan University"
     research_areas:
@@ -117,6 +118,7 @@ research_interns:
       - "Quantization"
       - "Reinforcement Learning"
     email: "0926187@kist.re.kr"
+    github: "https://github.com/sanananan3"
 
 undergrad:
   - id: "undergrad-wonseok-choi"
