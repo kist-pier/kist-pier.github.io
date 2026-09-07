@@ -1500,6 +1500,51 @@ span.gallery-date {
   }
 }
 
+.project-section-heading {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+
+  p {
+    color: $text-light;
+    font-size: 0.9375rem;
+    margin: 0;
+  }
+
+  a {
+    align-items: center;
+    border: 1px solid $border;
+    border-radius: 8px;
+    color: $primary;
+    display: inline-flex;
+    flex-shrink: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    gap: 0.4rem;
+    padding: 0.5rem 0.85rem;
+    text-decoration: none;
+    transition: $transition;
+
+    &:hover {
+      background: $accent;
+      border-color: $primary;
+      text-decoration: none;
+    }
+
+    i {
+      color: #ff0000;
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .project-card {
   background: white;
   border-radius: 16px;
