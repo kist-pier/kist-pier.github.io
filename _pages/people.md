@@ -19,7 +19,7 @@ nav: false
   <div class="member-row-card scroll-reveal">
     <div class="member-avatar">
       {% if person.image %}
-        <img src="{{ person.image | relative_url | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
+        <img src="{{ person.image | relative_url | bust_file_cache | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
       {% else %}
         <div class="member-initials-avatar">
           {{- person.name_en | split: " " | first | slice: 0 -}}{{- person.name_en | split: " " | last | slice: 0 -}}
@@ -65,7 +65,7 @@ nav: false
   <div class="member-row-card scroll-reveal">
     <div class="member-avatar">
       {% if person.image %}
-        <img src="{{ person.image | relative_url | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
+        <img src="{{ person.image | relative_url | bust_file_cache | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
       {% else %}
         <div class="member-initials-avatar">
           {{- person.name_en | split: " " | first | slice: 0 -}}{{- person.name_en | split: " " | last | slice: 0 -}}
@@ -108,7 +108,7 @@ nav: false
   <div class="member-row-card scroll-reveal">
     <div class="member-avatar">
       {% if person.image %}
-        <img src="{{ person.image | relative_url | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
+        <img src="{{ person.image | relative_url | bust_file_cache | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
       {% else %}
         <div class="member-initials-avatar">
           {{- person.name_en | split: " " | first | slice: 0 -}}{{- person.name_en | split: " " | last | slice: 0 -}}

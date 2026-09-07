@@ -17,6 +17,10 @@ nav_order: 5
       5 Hwarang-ro 14-gil, Seongbuk-gu<br>
       Seoul 02792, Republic of Korea
     </p>
+    <p style="margin-top:0.75rem;">
+      <strong>Lab</strong> — Building L08, 4F, Room 8426<br>
+      <strong>PI Office</strong> — Building L08, 3F, Room 8310
+    </p>
   </div>
 
   <div class="contact-card scroll-reveal">

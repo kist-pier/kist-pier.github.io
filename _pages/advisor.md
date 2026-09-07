@@ -13,7 +13,7 @@ nav: false
   <div class="advisor-header scroll-reveal">
     <div class="advisor-avatar">
       {% if pi.image %}
-        <img src="{{ pi.image | relative_url | escape }}" alt="{{ pi.name_en | escape }}" class="advisor-photo">
+        <img src="{{ pi.image | relative_url | bust_file_cache | escape }}" alt="{{ pi.name_en | escape }}" class="advisor-photo">
       {% else %}
         <div class="advisor-initials-avatar">
           {% if pi.initials %}
