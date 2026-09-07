@@ -20,6 +20,20 @@ $shadow-md: 0 2px 12px rgba(0, 0, 0, 0.06);
 $shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.08);
 $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
+.footer-admin-link {
+  color: inherit;
+  font-size: 0.875em;
+  opacity: 0.72;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    color: inherit;
+    opacity: 1;
+    text-decoration: underline;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. OVERRIDE AL-FOLIO CSS CUSTOM PROPERTIES (light theme)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -123,6 +137,18 @@ nav.navbar {
     color: $primary !important;
     font-weight: 600 !important;
     background: $accent;
+  }
+
+  .navbar-nav .nav-item .pier-cms-login-link {
+    border: 1px solid rgba($primary, 0.28);
+    color: $primary;
+    margin-left: 0.35rem;
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+
+    &:hover {
+      border-color: $primary;
+    }
   }
 
   // Search icon

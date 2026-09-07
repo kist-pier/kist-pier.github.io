@@ -1,0 +1,6 @@
+project_id = "pier-lab-cms"
+
+[functions.cms-content]
+# Authentication is verified inside the function with Supabase Auth. This also
+# supports the current publishable-key format and allows browser CORS preflight.
+verify_jwt = false

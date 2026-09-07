@@ -1,5 +1,6 @@
 pi:
-  - name_en: "Dr. Keunwoo Jang"
+  - id: "pi-keunwoo-jang"
+    name_en: "Dr. Keunwoo Jang"
     name_ko: "장근우"
     initials: "KJ"
     role: "Principal Investigator / Senior Researcher"
@@ -49,7 +50,8 @@ pi:
 phd: []
 
 ms:
-  - name_en: "Seungseop Lee"
+  - id: "ms-seungseop-lee"
+    name_en: "Seungseop Lee"
     name_ko: "이승섭"
     role: "M.S. Student"
     image: /assets/img/members/seungseop_lee.jpg
@@ -63,7 +65,8 @@ ms:
     email: "dkapqef@kist.re.kr"
     github: "https://github.com/Seung-Sub"
 
-  - name_en: "Namyoon Kim"
+  - id: "ms-namyoon-kim"
+    name_en: "Namyoon Kim"
     name_ko: "김남윤"
     role: "M.S. Student"
     image: /assets/img/members/namyoon_kim.jpg
@@ -77,7 +80,8 @@ ms:
     github: "https://github.com/kimnamyoon9"
 
 research_interns:
-  - name_en: "Seungwon Jang"
+  - id: "intern-seungwon-jang"
+    name_en: "Seungwon Jang"
     name_ko: "장승원"
     role: "Intern Researcher"
     image: /assets/img/members/seungwon_jang.jpg
@@ -89,7 +93,8 @@ research_interns:
     email: "0926106@kist.re.kr"
     github: "https://github.com/seungwon-jang"
 
-  - name_en: "Taehun Choi"
+  - id: "intern-taehun-choi"
+    name_en: "Taehun Choi"
     name_ko: "최태훈"
     role: "Intern Researcher"
     image: /assets/img/members/taehun_choi.jpg
@@ -102,7 +107,8 @@ research_interns:
     email: "kptro@kist.re.kr"
 
 undergrad:
-  - name_en: "Wonseok Choi"
+  - id: "undergrad-wonseok-choi"
+    name_en: "Wonseok Choi"
     name_ko: "최원석"
     role: "Undergraduate Student Researcher"
     image: /assets/img/members/wonseok_choi.jpg

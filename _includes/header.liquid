@@ -107,6 +107,12 @@
               {% endif %}
             {% endif %}
           {% endfor %}
+          {% if site.cms.enabled %}
+            <!-- CMS login -->
+            <li class="nav-item {% if page.url contains '/admin/' %}active{% endif %}">
+              <a class="nav-link pier-cms-login-link" href="{{ '/admin/' | relative_url }}">Login</a>
+            </li>
+          {% endif %}
           {% if site.search_enabled %}
             <!-- Search -->
             <li class="nav-item">

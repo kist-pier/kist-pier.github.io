@@ -7,6 +7,10 @@
       </a>
       <div class="footer-copy">
         &copy; {{ site.time | date: '%Y' }} Physical Intelligence &amp; Embodied Robotics Laboratory, KIST.
+        {% if site.cms.enabled and site.cms.supabase_url != '' and site.cms.supabase_publishable_key != '' %}
+          <span aria-hidden="true">&middot;</span>
+          <a class="footer-admin-link" href="{{ '/admin/' | relative_url }}">Login</a>
+        {% endif %}
       </div>
     </div>
   </footer>
@@ -23,6 +27,10 @@
       </a>
       <div class="footer-copy">
         &copy; {{ site.time | date: '%Y' }} Physical Intelligence &amp; Embodied Robotics Laboratory, KIST.
+        {% if site.cms.enabled and site.cms.supabase_url != '' and site.cms.supabase_publishable_key != '' %}
+          <span aria-hidden="true">&middot;</span>
+          <a class="footer-admin-link" href="{{ '/admin/' | relative_url }}">Login</a>
+        {% endif %}
       </div>
     </div>
   </footer>

@@ -19,7 +19,7 @@ nav: false
   <div class="member-row-card scroll-reveal">
     <div class="member-avatar">
       {% if person.image %}
-        <img src="{{ person.image | relative_url }}" alt="{{ person.name_en }}" class="member-photo">
+        <img src="{{ person.image | relative_url | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
       {% else %}
         <div class="member-initials-avatar">
           {{- person.name_en | split: " " | first | slice: 0 -}}{{- person.name_en | split: " " | last | slice: 0 -}}
@@ -27,21 +27,21 @@ nav: false
       {% endif %}
     </div>
     <div class="member-info">
-      <div class="member-name">{{ person.name_en }}</div>
-      <div class="member-name-ko">{{ person.name_ko }}</div>
-      <div class="member-role">{{ person.role }}</div>
+      <div class="member-name">{{ person.name_en | escape }}</div>
+      <div class="member-name-ko">{{ person.name_ko | escape }}</div>
+      <div class="member-role">{{ person.role | escape }}</div>
       {% if person.affiliation %}
-        <div class="member-school">{{ person.affiliation }}</div>
+        <div class="member-school">{{ person.affiliation | escape }}</div>
       {% endif %}
       {% if person.education %}
         {% for edu in person.education %}
-          <div class="member-undergrad">{{ edu }}</div>
+          <div class="member-undergrad">{{ edu | escape }}</div>
         {% endfor %}
       {% endif %}
       {% if person.research_areas %}
         <div class="member-tags">
           {% for tag in person.research_areas %}
-            <span class="research-tag">{{ tag }}</span>
+            <span class="research-tag">{{ tag | escape }}</span>
           {% endfor %}
         </div>
       {% endif %}
@@ -65,7 +65,7 @@ nav: false
   <div class="member-row-card scroll-reveal">
     <div class="member-avatar">
       {% if person.image %}
-        <img src="{{ person.image | relative_url }}" alt="{{ person.name_en }}" class="member-photo">
+        <img src="{{ person.image | relative_url | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
       {% else %}
         <div class="member-initials-avatar">
           {{- person.name_en | split: " " | first | slice: 0 -}}{{- person.name_en | split: " " | last | slice: 0 -}}
@@ -73,18 +73,18 @@ nav: false
       {% endif %}
     </div>
     <div class="member-info">
-      <div class="member-name">{{ person.name_en }}</div>
-      <div class="member-name-ko">{{ person.name_ko }}</div>
-      <div class="member-role">{{ person.role }}</div>
+      <div class="member-name">{{ person.name_en | escape }}</div>
+      <div class="member-name-ko">{{ person.name_ko | escape }}</div>
+      <div class="member-role">{{ person.role | escape }}</div>
       {% if person.education %}
         {% for edu in person.education %}
-          <div class="member-school">{{ edu }}</div>
+          <div class="member-school">{{ edu | escape }}</div>
         {% endfor %}
       {% endif %}
       {% if person.research_areas %}
         <div class="member-tags">
           {% for tag in person.research_areas %}
-            <span class="research-tag">{{ tag }}</span>
+            <span class="research-tag">{{ tag | escape }}</span>
           {% endfor %}
         </div>
       {% endif %}
@@ -108,7 +108,7 @@ nav: false
   <div class="member-row-card scroll-reveal">
     <div class="member-avatar">
       {% if person.image %}
-        <img src="{{ person.image | relative_url }}" alt="{{ person.name_en }}" class="member-photo">
+        <img src="{{ person.image | relative_url | escape }}" alt="{{ person.name_en | escape }}" class="member-photo">
       {% else %}
         <div class="member-initials-avatar">
           {{- person.name_en | split: " " | first | slice: 0 -}}{{- person.name_en | split: " " | last | slice: 0 -}}
@@ -116,18 +116,18 @@ nav: false
       {% endif %}
     </div>
     <div class="member-info">
-      <div class="member-name">{{ person.name_en }}</div>
-      <div class="member-name-ko">{{ person.name_ko }}</div>
-      <div class="member-role">{{ person.role }}</div>
+      <div class="member-name">{{ person.name_en | escape }}</div>
+      <div class="member-name-ko">{{ person.name_ko | escape }}</div>
+      <div class="member-role">{{ person.role | escape }}</div>
       {% if person.education %}
         {% for edu in person.education %}
-          <div class="member-school">{{ edu }}</div>
+          <div class="member-school">{{ edu | escape }}</div>
         {% endfor %}
       {% endif %}
       {% if person.research_areas %}
         <div class="member-tags">
           {% for tag in person.research_areas %}
-            <span class="research-tag">{{ tag }}</span>
+            <span class="research-tag">{{ tag | escape }}</span>
           {% endfor %}
         </div>
       {% endif %}
@@ -159,10 +159,10 @@ nav: false
     <tbody>
       {% for person in members.alumni.intern_alumni %}
       <tr>
-        <td>{{ person.name_en }}</td>
-        <td>{{ person.period }}</td>
-        <td>{{ person.affiliation }}</td>
-        <td>{% if person.next and person.next != "" %}{{ person.next }}{% else %}—{% endif %}</td>
+        <td>{{ person.name_en | escape }}</td>
+        <td>{{ person.period | escape }}</td>
+        <td>{{ person.affiliation | escape }}</td>
+        <td>{% if person.next and person.next != "" %}{{ person.next | escape }}{% else %}—{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -184,10 +184,10 @@ nav: false
     <tbody>
       {% for person in members.alumni.undergrad_alumni %}
       <tr>
-        <td>{{ person.name_en }}</td>
-        <td>{{ person.period }}</td>
-        <td>{{ person.affiliation }}</td>
-        <td>{% if person.next and person.next != "" %}{{ person.next }}{% else %}—{% endif %}</td>
+        <td>{{ person.name_en | escape }}</td>
+        <td>{{ person.period | escape }}</td>
+        <td>{{ person.affiliation | escape }}</td>
+        <td>{% if person.next and person.next != "" %}{{ person.next | escape }}{% else %}—{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

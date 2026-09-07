@@ -21,6 +21,12 @@ push to `main` ──▶ .github/workflows/deploy.yml ──▶ jekyll build ─
 - Build typically takes 2–4 minutes. Watch progress at <https://github.com/kist-pier/kist-pier.github.io/actions>.
 - **If you don't see your change live within ~5 minutes, check the latest workflow run** — a YAML/Liquid syntax error stops the build, and the site keeps serving the previous deploy.
 
+### Web CMS
+
+An invite-only editor is available at `/admin/` after Supabase is configured. Administrators can edit the site's allowlisted content and create News items; regular members can edit only the profile linked to their account. Saves are committed to GitHub and use the existing Pages deployment workflow.
+
+Setup and account-management instructions: **[`docs/CMS_SETUP.md`](docs/CMS_SETUP.md)**.
+
 ---
 
 ## 2. Local development
@@ -136,7 +142,7 @@ File: **`_data/members.yml`**
 - New intern: append under `research_interns:`.
 - New undergrad: append under `undergrad:`.
 - A member who left: move their block from the active section to `alumni.intern_alumni` or `alumni.undergrad_alumni`, drop fields not needed for alumni (`email`, `image`, etc.), and add `period:` and `next:`.
-- Optional member links: add `github:` for a GitHub profile and `cv:` for a public CV PDF under `assets/pdf/`. Buttons are shown only when the corresponding field exists.
+- Optional member links: add `github:` for a GitHub profile and `cv:` for a public CV PDF under `assets/pdf/`. Links are shown only when the corresponding field exists.
 
 Photo workflow:
 

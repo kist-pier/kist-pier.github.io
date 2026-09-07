@@ -1,0 +1,212 @@
+---
+permalink: /admin/
+sitemap: false
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; img-src 'self' data:; style-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' {{ site.cms.supabase_url | escape }}; form-action 'self'"
+    >
+    <meta name="pier-cms-url" content="{{ site.cms.supabase_url | escape }}">
+    <meta name="pier-cms-key" content="{{ site.cms.supabase_publishable_key | escape }}">
+    <meta name="pier-cms-local-demo" content="{% if jekyll.environment == 'development' %}true{% else %}false{% endif %}">
+    <title>PIER Lab CMS</title>
+    <link rel="icon" href="{{ '/assets/img/logo2.png' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/cms-admin.css' | relative_url }}">
+  </head>
+  <body>
+    <noscript>PIER Lab CMS를 사용하려면 JavaScript를 활성화해야 합니다.</noscript>
+
+    <main id="cms-login" class="login-page">
+      <section class="login-card" aria-labelledby="login-title">
+        <a class="brand" href="{{ '/' | relative_url }}" aria-label="PIER Lab 홈페이지로 이동">
+          <img src="{{ '/assets/img/logo2.png' | relative_url }}" alt="">
+          <span>PIER LAB <small>CMS</small></span>
+        </a>
+        <div id="cms-setup-notice" class="notice notice-warning" hidden>
+          CMS 연결 설정이 아직 완료되지 않았습니다. 저장소의 <code>docs/CMS_SETUP.md</code>를 따라 Supabase 연결 정보를 설정해 주세요.
+        </div>
+        <div id="cms-demo-notice" class="notice notice-demo" hidden>
+          <strong>Local admin demo</strong>
+          <span>이 계정은 localhost에서만 작동하며 변경 사항은 운영 홈페이지에 반영되지 않습니다.</span>
+          <dl>
+            <div><dt>ID</dt><dd><code>admin@pier-lab.local</code></dd></div>
+            <div><dt>Password</dt><dd><code>PIER-local-2026!</code></dd></div>
+          </dl>
+        </div>
+        <form id="login-form">
+          <h1 id="login-title">Member Login</h1>
+          <p>관리자와 등록된 연구실 멤버만 사용할 수 있습니다.</p>
+          <label for="login-email">Email</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" required>
+          <label for="login-password">Password</label>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          <button class="button button-primary button-block" type="submit">Sign in</button>
+          <button id="forgot-password" class="text-button" type="button">Forgot password?</button>
+          <p id="login-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+        <form id="recovery-form" hidden>
+          <h1>Set new password</h1>
+          <p>12자 이상의 새 비밀번호를 설정해 주세요.</p>
+          <label for="recovery-password">New password</label>
+          <input id="recovery-password" name="password" type="password" minlength="12" autocomplete="new-password" required>
+          <label for="recovery-confirm">Confirm password</label>
+          <input id="recovery-confirm" name="confirm" type="password" minlength="12" autocomplete="new-password" required>
+          <button class="button button-primary button-block" type="submit">Update password</button>
+          <p id="recovery-status" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+        <a class="back-link" href="{{ '/' | relative_url }}">← 홈페이지로 돌아가기</a>
+      </section>
+    </main>
+
+    <div id="cms-app" class="app-shell" hidden>
+      <aside class="sidebar">
+        <a class="brand brand-sidebar" href="{{ '/' | relative_url }}">
+          <img src="{{ '/assets/img/logo2.png' | relative_url }}" alt="">
+          <span>PIER LAB <small>CMS</small></span>
+        </a>
+        <p class="sidebar-label">CONTENT</p>
+        <nav id="cms-navigation" aria-label="CMS 메뉴"></nav>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">PHYSICAL INTELLIGENCE &amp; EMBODIED ROBOTICS LAB</p>
+            <h1 id="workspace-title">Content</h1>
+          </div>
+          <div class="account-menu">
+            <span id="account-name"></span>
+            <span id="account-role" class="role-badge"></span>
+            <a class="button button-secondary" href="{{ '/' | relative_url }}" target="_blank" rel="noopener">View site</a>
+            <button id="sign-out" class="button button-dark" type="button">Sign out</button>
+          </div>
+        </header>
+
+        <div id="cms-demo-banner" class="notice notice-demo" hidden>
+          <strong>Local demo mode</strong> — 저장 내용은 이 브라우저에만 임시 보관되며 GitHub 또는 운영 홈페이지에는 게시되지 않습니다.
+        </div>
+
+        <div id="global-status" class="notice" role="status" aria-live="polite" hidden></div>
+
+        <section id="admin-editor" class="panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2>Website content</h2>
+              <p>저장하면 GitHub에 커밋되고 홈페이지가 자동으로 다시 배포됩니다.</p>
+            </div>
+            <button id="reload-resource" class="button button-secondary" type="button">Reload</button>
+          </div>
+          <label for="resource-select">편집할 콘텐츠</label>
+          <select id="resource-select"></select>
+          <div class="editor-meta">
+            <code id="resource-path"></code>
+            <span id="resource-sha"></span>
+          </div>
+          <label for="source-editor">Source</label>
+          <textarea id="source-editor" class="source-editor" spellcheck="false"></textarea>
+          <div class="form-actions">
+            <button id="save-resource" class="button button-primary" type="button">Save &amp; publish</button>
+          </div>
+        </section>
+
+        <section id="news-creator" class="panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2>New News item</h2>
+              <p>날짜와 영문 slug로 새 News 파일을 만듭니다.</p>
+            </div>
+          </div>
+          <form id="news-form" class="form-grid">
+            <div>
+              <label for="news-date">Date</label>
+              <input id="news-date" name="date" type="date" required>
+            </div>
+            <div>
+              <label for="news-slug">Slug</label>
+              <input id="news-slug" name="slug" type="text" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="new-project-announcement" required>
+            </div>
+            <div class="form-wide">
+              <label for="news-display-date">Display date <span>(optional)</span></label>
+              <input id="news-display-date" name="display_date" type="text" placeholder="Sep 2026">
+            </div>
+            <div class="form-wide">
+              <label for="news-body">Body <span>(Markdown)</span></label>
+              <textarea id="news-body" name="body" rows="10" required></textarea>
+            </div>
+            <div class="form-wide form-actions">
+              <button class="button button-primary" type="submit">Create &amp; publish</button>
+            </div>
+          </form>
+        </section>
+
+        <section id="member-editor" class="panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2>My member profile</h2>
+              <p>본인 프로필의 공개 정보만 수정할 수 있습니다. 소속 구분과 권한은 관리자가 변경합니다.</p>
+            </div>
+          </div>
+          <form id="member-form" class="form-grid">
+            <div>
+              <label for="member-name-en">English name</label>
+              <input id="member-name-en" name="name_en" type="text" required>
+            </div>
+            <div>
+              <label for="member-name-ko">Korean name</label>
+              <input id="member-name-ko" name="name_ko" type="text">
+            </div>
+            <div>
+              <label for="member-email">Email</label>
+              <input id="member-email" name="email" type="text">
+            </div>
+            <div>
+              <label for="member-github">GitHub URL</label>
+              <input id="member-github" name="github" type="url" placeholder="https://github.com/...">
+            </div>
+            <div>
+              <label for="member-cv">CV path or URL</label>
+              <input id="member-cv" name="cv" type="text" placeholder="/assets/pdf/name_cv.pdf">
+            </div>
+            <div>
+              <label for="member-website">Website URL</label>
+              <input id="member-website" name="website" type="url" placeholder="https://...">
+            </div>
+            <div class="form-wide">
+              <label for="member-affiliation">Affiliation</label>
+              <textarea id="member-affiliation" name="affiliation" rows="3"></textarea>
+            </div>
+            <div class="form-wide">
+              <label for="member-education">Education <span>(한 줄에 하나)</span></label>
+              <textarea id="member-education" name="education" rows="5"></textarea>
+            </div>
+            <div class="form-wide">
+              <label for="member-research">Research areas <span>(한 줄에 하나)</span></label>
+              <textarea id="member-research" name="research_areas" rows="5"></textarea>
+            </div>
+            <div class="form-wide">
+              <label for="member-bio">Bio</label>
+              <textarea id="member-bio" name="bio" rows="7"></textarea>
+            </div>
+            <div class="form-wide form-actions">
+              <button class="button button-primary" type="submit">Save &amp; publish</button>
+            </div>
+          </form>
+        </section>
+      </section>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.114.0"
+      integrity="sha384-0UK+HVlz5Y7F//atDpPysyocv/PjGXQoBX+XSaL/eEotARW8rPFh+lL5sO0Ljzfi"
+      crossorigin="anonymous"
+    ></script>
+    <script src="{{ '/assets/js/cms-admin.js' | relative_url }}" defer></script>
+  </body>
+</html>
