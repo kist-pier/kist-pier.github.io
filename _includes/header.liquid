@@ -4,7 +4,7 @@
     <div class="container">
       <a class="navbar-brand pier-navbar-brand" href="{{ '/' | relative_url }}" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
         <img
-          src="{{ '/assets/img/logo2.png' | relative_url }}"
+          src="{{ '/assets/img/pier_lab_header.png' | relative_url }}"
           alt="PIER Lab"
           class="navbar-logo-img"
           height="80"
@@ -107,8 +107,9 @@
               {% endif %}
             {% endif %}
           {% endfor %}
-          {% if site.cms.enabled %}
-            <!-- CMS login -->
+          {% if site.cms.enabled and site.cms.supabase_url != '' and site.cms.supabase_publishable_key != '' %}
+            <!-- CMS login — same condition as _includes/footer.liquid: an unconfigured CMS must not
+                 advertise a Login link that opens a disabled form. -->
             <li class="nav-item {% if page.url contains '/admin/' %}active{% endif %}">
               <a class="nav-link pier-cms-login-link" href="{{ '/admin/' | relative_url }}">Login</a>
             </li>

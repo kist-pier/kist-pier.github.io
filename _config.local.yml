@@ -1,0 +1,49 @@
+# Lightweight overrides for local preview environments that do not have
+# ImageMagick or Jupyter installed. Always load this after _config.yml:
+#   bundle exec jekyll serve --config _config.yml,_config.local.yml
+
+plugins:
+  - jekyll-3rd-party-libraries
+  - jekyll-archives-v2
+  - jekyll-cache-bust
+  - jekyll-email-protect
+  - jekyll-feed
+  - jekyll-get-json
+  - jekyll-link-attributes
+  - jekyll-minifier
+  - jekyll-paginate-v2
+  - jekyll-regex-replace
+  - jekyll/scholar
+  - jekyll-sitemap
+  - jekyll-socials
+  - jekyll-tabs
+  - jekyll-toc
+  - jekyll-twitter-plugin
+  - jemoji
+
+imagemagick:
+  enabled: false
+
+# jekyll-jupyter-notebook is auto-required from the Gemfile's :jekyll_plugins group, so dropping it
+# from `plugins:` above does not stop it: it still shells out to a `jupyter` CLI this environment
+# does not have, and the build dies converting al-folio's demo notebook. Excluding the notebook is
+# the only local-side switch. This list must repeat _config.yml's excludes because Jekyll replaces
+# array values across config files rather than merging them.
+exclude:
+  - _config.local.yml
+  - bin/
+  - Dockerfile
+  - docker-compose.yml
+  - docker-compose-slim.yml
+  - Gemfile
+  - Gemfile.lock
+  - LICENSE
+  - package.json
+  - package-lock.json
+  - pictures/
+  - purgecss.config.js
+  - README.md
+  - docs/
+  - supabase/
+  - vendor
+  - assets/jupyter/

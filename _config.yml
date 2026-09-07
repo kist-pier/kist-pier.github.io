@@ -28,8 +28,8 @@ back_to_top: true # set to false to disable the back to top button
 # Supabase Edge Function secrets. See docs/CMS_SETUP.md.
 cms:
   enabled: true
-  supabase_url: ""
-  supabase_publishable_key: ""
+  supabase_url: "https://bebtbbhlakjlnhzeeaol.supabase.co"
+  supabase_publishable_key: "sb_publishable_hTRWukwmL1hdWaFzuTZiXw_v1e4Xxry"
 
 # -----------------------------------------------------------------------------
 # Theme
@@ -177,6 +177,7 @@ kramdown:
 # Includes & excludes
 include: ["_pages", "_scripts"]
 exclude:
+  - _config.local.yml
   - bin/
   - Dockerfile
   - docker-compose.yml
@@ -186,7 +187,7 @@ exclude:
   - LICENSE
   - package.json
   - package-lock.json
-  - Pictures/
+  - pictures/
   - purgecss.config.js
   - README.md
   - docs/

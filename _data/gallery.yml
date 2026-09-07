@@ -1,82 +1,82 @@
 photos:
   # Sorted by date descending (newest first)
 
-  - image: "/assets/img/gallery/lablife_09.jpg"
+  - image: "/assets/img/gallery/2026-02-24_taekgeun_nam_chanpyo_hong_farewell_02.jpg"
     caption: "Farewell to Taekgeun Nam & Chanpyo Hong (Interns) (2)"
     category: "lab-life"
     date: "2026-02-24"
 
-  - image: "/assets/img/gallery/lablife_08.jpg"
+  - image: "/assets/img/gallery/2026-02-24_taekgeun_nam_chanpyo_hong_farewell_01.jpg"
     caption: "Farewell to Taekgeun Nam & Chanpyo Hong (Interns) (1)"
     category: "lab-life"
     date: "2026-02-24"
 
-  - image: "/assets/img/gallery/conf_07.jpg"
+  - image: "/assets/img/gallery/2026-02-05_kroc_03.jpg"
     caption: "KROS Robotics Society 2026 (3)"
     category: "conferences"
     date: "2026-02-05"
 
-  - image: "/assets/img/gallery/conf_06.jpg"
+  - image: "/assets/img/gallery/2026-02-05_kroc_02.jpg"
     caption: "KROS Robotics Society 2026 (2)"
     category: "conferences"
     date: "2026-02-05"
 
-  - image: "/assets/img/gallery/conf_05.jpg"
+  - image: "/assets/img/gallery/2026-02-05_kroc_01.jpg"
     caption: "KROS Robotics Society 2026 (1)"
     category: "conferences"
     date: "2026-02-05"
 
-  - image: "/assets/img/gallery/lablife_07.jpg"
+  - image: "/assets/img/gallery/2026-01-09_kist_air_lab_dinner.jpg"
     caption: "KIST AIR Lab Group Dinner"
     category: "lab-life"
     date: "2026-01-09"
 
-  - image: "/assets/img/gallery/lablife_06.jpg"
+  - image: "/assets/img/gallery/2025-12-09_birthdays_and_farewell.jpg"
     caption: "Birthday Party (Junsoo, Seungwon) & Farewell (Jiyeon, Dogun)"
     category: "lab-life"
     date: "2025-12-09"
 
-  - image: "/assets/img/gallery/lablife_05.jpg"
+  - image: "/assets/img/gallery/2025-10-17_kist_air_achasan_hike_02.jpg"
     caption: "KIST AIR Autumn Team Building — Achasan Hiking (2)"
     category: "lab-life"
     date: "2025-10-17"
 
-  - image: "/assets/img/gallery/lablife_04.jpg"
+  - image: "/assets/img/gallery/2025-10-17_kist_air_achasan_hike_01.jpg"
     caption: "KIST AIR Autumn Team Building — Achasan Hiking (1)"
     category: "lab-life"
     date: "2025-10-17"
 
-  - image: "/assets/img/gallery/conf_04.jpg"
+  - image: "/assets/img/gallery/2025-09-30_corl_humanoids_02.jpg"
     caption: "CoRL & Humanoids Conference (2)"
     category: "conferences"
     date: "2025-09-30"
 
-  - image: "/assets/img/gallery/conf_03.jpg"
+  - image: "/assets/img/gallery/2025-09-20_corl_humanoids_01.jpg"
     caption: "CoRL & Humanoids Conference (1)"
     category: "conferences"
     date: "2025-09-20"
 
-  - image: "/assets/img/gallery/lablife_03.jpg"
+  - image: "/assets/img/gallery/2025-06-18_geonyoung_ko_farewell.jpg"
     caption: "Farewell to Geonyoung Ko (Intern)"
     category: "lab-life"
     date: "2025-06-18"
 
-  - image: "/assets/img/gallery/conf_02.jpg"
+  - image: "/assets/img/gallery/2025-05-30_kros_locomotion_manipulation_workshop_02.jpg"
     caption: "KROS Locomotion & Manipulation Workshop (2)"
     category: "conferences"
     date: "2025-05-30"
 
-  - image: "/assets/img/gallery/conf_01.jpg"
+  - image: "/assets/img/gallery/2025-05-30_kros_locomotion_manipulation_workshop_01.jpg"
     caption: "KROS Locomotion & Manipulation Workshop (1)"
     category: "conferences"
     date: "2025-05-30"
 
-  - image: "/assets/img/gallery/lablife_02.jpg"
+  - image: "/assets/img/gallery/2025-05-15_teachers_day.jpg"
     caption: "Teacher's Day Celebration"
     category: "lab-life"
     date: "2025-05-15"
 
-  - image: "/assets/img/gallery/lablife_01.jpg"
+  - image: "/assets/img/gallery/2025-02-27_geonwoo_ko_farewell.jpg"
     caption: "Farewell to Geonwoo Ko (Intern)"
     category: "lab-life"
     date: "2025-02-27"

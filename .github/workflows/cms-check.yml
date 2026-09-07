@@ -7,12 +7,18 @@ on:
       - "admin/**"
       - "assets/js/cms-admin.js"
       - "supabase/**"
+      - "_config.yml"
+      - "_includes/header.liquid"
+      - "_includes/footer.liquid"
       - ".github/workflows/cms-check.yml"
   pull_request:
     paths:
       - "admin/**"
       - "assets/js/cms-admin.js"
       - "supabase/**"
+      - "_config.yml"
+      - "_includes/header.liquid"
+      - "_includes/footer.liquid"
       - ".github/workflows/cms-check.yml"
   workflow_dispatch:
 
@@ -27,6 +33,33 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Check CMS configuration
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+          src = open("_config.yml", encoding="utf-8").read()
+          block = re.search(r"^cms:\n((?:[ \t]+.*\n|\n)*)", src, re.M)
+          if not block:
+              sys.exit("_config.yml has no cms: block")
+          body = block.group(1)
+          def value(key):
+              m = re.search(r"^\s+%s:\s*(.*?)\s*$" % key, body, re.M)
+              return m.group(1).strip().strip('"').strip("'") if m else ""
+          enabled = value("enabled").lower() == "true"
+          url, key = value("supabase_url"), value("supabase_publishable_key")
+          if enabled and not (url and key):
+              sys.exit("cms.enabled is true but supabase_url/supabase_publishable_key is empty: "
+                       "/admin/ would render a disabled login form while the nav still links to it. "
+                       "Fill both values, or set cms.enabled: false.")
+          if url and not url.startswith("https://"):
+              sys.exit("cms.supabase_url must start with https:// (got %r) "
+                       "— supabase-js createClient() throws on anything else." % url)
+          if key.startswith("sb_secret_") or key.startswith("eyJ"):
+              sys.exit("cms.supabase_publishable_key looks like a secret or legacy JWT key. "
+                       "_config.yml is public — only sb_publishable_... belongs here.")
+          print("CMS config OK (enabled=%s, url=%s)" % (enabled, url or "-"))
+          EOF
+
       - name: Check browser JavaScript
         run: node --check assets/js/cms-admin.js
       - name: Check Edge Function

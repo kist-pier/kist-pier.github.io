@@ -12,7 +12,7 @@ _site
 assets/libs/
 node_modules/
 vendor
-.env.cms
+.env.cms*
 supabase/.temp/
 
 # Local agent / IDE config

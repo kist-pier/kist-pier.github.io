@@ -46,6 +46,20 @@ docker compose down
 
 Edits to `_config.yml` require a **container restart** (`docker compose down && docker compose up`); other files reload automatically.
 
+If Ruby is installed but ImageMagick or Jupyter is unavailable, use the
+lightweight local override instead:
+
+```bash
+bundle install
+JEKYLL_NO_BUNDLER_REQUIRE=true bundle exec jekyll serve \
+  --config _config.yml,_config.local.yml \
+  --watch --livereload --force_polling \
+  --host 0.0.0.0 --port 8080
+```
+
+The server watches source files, rebuilds after every save, and refreshes open
+browser tabs through LiveReload. Restart it only after editing a config file.
+
 ### Optional: format before committing
 
 ```bash
@@ -106,7 +120,7 @@ kist-pier.github.io/
 │   │   ├── members/         ← member photos used by members.yml
 │   │   ├── gallery/         ← gallery photos used by gallery.yml
 │   │   ├── lab-equipment/   ← equipment/facility photos
-│   │   └── logo.png, favicon, …
+│   │   └── pier_lab_*.png, favicon, …
 │   ├── css/, js/, fonts/    ← theme assets (avoid editing)
 │   └── bibliography/        ← extra publication assets (PDFs, etc.)
 ├── _scripts/                ← small site JS (search, scroll-reveal, etc.)
@@ -114,7 +128,7 @@ kist-pier.github.io/
 ├── bin/
 │   ├── entry_point.sh       ← Docker entry point
 │   └── update_scholar_citations.py  ← Scholar citation updater
-├── Pictures/                ← raw originals & backups (NOT used by the site;
+├── pictures/                ← raw originals & backups (NOT used by the site;
 │                              excluded from build via _config.yml)
 ├── .github/
 │   ├── workflows/
@@ -146,9 +160,18 @@ File: **`_data/members.yml`**
 
 Photo workflow:
 
-1. Drop the original photo into `Pictures/members/` (raw archive).
-2. Save a web-friendly copy (≤ 800 px wide, ~200–400 KB) into `assets/img/members/` using a snake-case filename, e.g. `seungseop_lee.jpg`.
+1. Drop the original photo into `pictures/members/` (raw archive). Use a lowercase
+   snake-case filename and `.jpg` for JPEG files, e.g. `seungseop_lee.jpg`.
+2. Save a web-friendly copy (≤ 800 px wide, ~200–400 KB) into `assets/img/members/`
+   using the same filename.
 3. Reference it from `members.yml` with `image: /assets/img/members/seungseop_lee.jpg`.
+
+All directories below `pictures/` use lowercase kebab-case. Dated event photos
+use `YYYY-MM-DD_description_01.jpg`. See `pictures/README.md` for the complete
+naming convention.
+
+Run `python3 _scripts/check_image_names.py` before committing image changes.
+The deployment workflow runs the same check automatically.
 
 ### B. Add a news item
 
@@ -273,7 +296,7 @@ Avoid editing files under `_sass/` other than `_custom.scss` — those are theme
 - **One commit per logical change.** Short imperative subject (e.g. `Add: Suhyeon Pyo intern profile`).
 - **No AI co-author trailers.** Do not add `Co-Authored-By:` lines for AI assistants — the history was rewritten on 2026-03-08 to remove them and they should not return.
 - **Don't commit** `_site/`, `node_modules/`, `.jekyll-cache/`, or `.tweet-cache/` (already gitignored).
-- **`Pictures/`** is a raw archive of source images; the site itself reads from `assets/img/`. Treat `Pictures/` as a separate backup.
+- **`pictures/`** is a raw archive of source images; the site itself reads from `assets/img/`. Treat `pictures/` as a separate backup.
 
 ---
 

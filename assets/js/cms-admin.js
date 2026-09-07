@@ -11,6 +11,9 @@
 
   const LOCAL_DEMO_EMAIL = "admin@pier-lab.local";
   const LOCAL_DEMO_PASSWORD = "PIER-local-2026!";
+  // Set while a recovery link is being used, cleared only after the password is actually changed,
+  // so reloading the page cannot skip the mandatory password change.
+  const RECOVERY_PENDING_KEY = "pier-cms:recovery-pending";
   const LOCAL_DEMO_RESOURCES = [
     { id: "page:home", label: "Home", group: "Pages", path: "_pages/about.md" },
     { id: "page:research", label: "Research Areas & Projects", group: "Pages", path: "_pages/projects.md" },
@@ -303,11 +306,21 @@
       }
       if (profile.member_id) await loadMemberProfile();
     } catch (error) {
-      if (client) await client.auth.signOut();
+      // Return to the login card BEFORE signing out: the SIGNED_OUT listener reloads the page while
+      // the app is still visible, which would discard the message written below.
+      // #login-status also lives inside #login-form, which the recovery path hides, so restore that
+      // too or the message goes into a hidden node and the card renders empty.
+      elements.app.hidden = true;
+      elements.login.hidden = false;
+      elements.loginForm.hidden = false;
+      elements.recoveryForm.hidden = true;
+      // Only a real authorization failure should end the session. signOut() defaults to a global
+      // scope, so a 5xx or a dropped connection used to revoke every device's refresh token.
+      if (client && (error.status === 401 || error.status === 403)) {
+        await client.auth.signOut({ scope: "local" });
+      }
       window.sessionStorage.removeItem("pier-cms-demo:authenticated");
       elements.loginStatus.textContent = error.message;
-      elements.login.hidden = false;
-      elements.app.hidden = true;
     }
   }
 
@@ -330,17 +343,27 @@
       setBusy(button, false);
       return;
     }
-    const { error } = await client.auth.signInWithPassword({
-      email: String(formData.get("email") || "").trim(),
-      password: String(formData.get("password") || ""),
-    });
-    if (error) {
-      elements.loginStatus.textContent = "이메일 또는 비밀번호를 확인해 주세요.";
+    try {
+      const { error } = await client.auth.signInWithPassword({
+        email: String(formData.get("email") || "").trim(),
+        password: String(formData.get("password") || ""),
+      });
+      if (error) {
+        // 400 invalid_credentials stays deliberately generic so the form is not an account oracle,
+        // but a lockout or an outage must not be reported as a wrong password.
+        elements.loginStatus.textContent = error.status === 429
+          ? "시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."
+          : (error.status >= 500 || error.name === "AuthRetryableFetchError")
+            ? "서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요."
+            : "이메일 또는 비밀번호를 확인해 주세요.";
+        return;
+      }
+      await enterApp();
+    } catch (_) {
+      elements.loginStatus.textContent = "로그인 처리 중 오류가 발생했습니다.";
+    } finally {
       setBusy(button, false);
-      return;
     }
-    await enterApp();
-    setBusy(button, false);
   });
 
   elements.forgotPassword.addEventListener("click", async () => {
@@ -381,6 +404,7 @@
       setBusy(button, false);
       return;
     }
+    window.sessionStorage.removeItem(RECOVERY_PENDING_KEY);
     window.history.replaceState({}, document.title, window.location.pathname);
     elements.recoveryForm.hidden = true;
     await enterApp();
@@ -479,6 +503,22 @@
     }
   });
 
+  function disableLogin() {
+    elements.loginForm.querySelectorAll("input, button").forEach((node) => { node.disabled = true; });
+  }
+
+  // GoTrue returns an expired or already-used link as error_code=... in the fragment with no
+  // type=recovery, so without this the page would show a plain login form and no explanation.
+  function hashError() {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const code = params.get("error_code");
+    if (!code) return "";
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return code === "otp_expired"
+      ? "재설정 링크가 만료되었습니다. 다시 요청해 주세요."
+      : params.get("error_description") || "링크를 사용할 수 없습니다. 다시 요청해 주세요.";
+  }
+
   async function start() {
     if (config.localDemoEnabled && (!config.supabaseUrl || !config.publishableKey)) {
       demoMode = true;
@@ -492,7 +532,15 @@
     }
     if (!config.supabaseUrl || !config.publishableKey || !window.supabase) {
       elements.setupNotice.hidden = false;
-      elements.loginForm.querySelectorAll("input, button").forEach((node) => { node.disabled = true; });
+      disableLogin();
+      return;
+    }
+    // createClient() throws synchronously on a URL with no scheme — which is exactly the form the
+    // Supabase dashboard displays — leaving an enabled form with no client behind it.
+    if (!/^https:\/\/[^\s/]+/.test(config.supabaseUrl)) {
+      elements.setupNotice.hidden = false;
+      elements.loginStatus.textContent = "Supabase URL은 https:// 로 시작해야 합니다. _config.yml의 cms.supabase_url을 확인해 주세요.";
+      disableLogin();
       return;
     }
     client = window.supabase.createClient(config.supabaseUrl, config.publishableKey, {
@@ -503,9 +551,21 @@
         storage: window.sessionStorage,
       },
     });
-    const recoveryRequested = window.location.hash.includes("type=recovery") || new URLSearchParams(window.location.search).get("type") === "recovery";
+    client.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT" && !elements.app.hidden) window.location.reload();
+    });
+
+    const linkError = hashError();
+    if (linkError) elements.loginStatus.textContent = linkError;
+
+    const recoveryRequested = window.location.hash.includes("type=recovery")
+      || new URLSearchParams(window.location.search).get("type") === "recovery"
+      || window.sessionStorage.getItem(RECOVERY_PENDING_KEY) === "true";
     const { data } = await client.auth.getSession();
     if (data.session && recoveryRequested) {
+      // The fragment is cleared as soon as the session is exchanged, so without this flag a reload
+      // would drop the user straight into the app with the old password still valid.
+      window.sessionStorage.setItem(RECOVERY_PENDING_KEY, "true");
       elements.loginForm.hidden = true;
       elements.recoveryForm.hidden = false;
     } else if (data.session) {
@@ -513,5 +573,9 @@
     }
   }
 
-  start();
+  start().catch((error) => {
+    elements.setupNotice.hidden = false;
+    elements.loginStatus.textContent = (error && error.message) || "CMS를 초기화하지 못했습니다.";
+    disableLogin();
+  });
 })();

@@ -31,7 +31,7 @@ social: false
         </div>
       </div>
       <div class="hero-right">
-        <img src="/assets/img/logo.png" alt="PIER Lab" class="hero-logo-right" onerror="this.style.display='none'">
+        <img src="/assets/img/pier_lab_hero.png" alt="PIER Lab" class="hero-logo-right" onerror="this.style.display='none'">
       </div>
     </div>
   </div>

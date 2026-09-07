@@ -53,6 +53,14 @@ revoke all on table public.cms_profiles from anon, authenticated;
 revoke all on table public.cms_audit_logs from anon, authenticated;
 grant select on table public.cms_profiles to authenticated;
 
+-- The Edge Function reaches both tables through PostgREST with a secret (service_role) key, so its
+-- grants must be explicit rather than inherited from the project's default privileges: Supabase is
+-- removing the automatic "expose new tables" grants (new projects from 2026-05-30, all projects
+-- from 2026-10-30), and without these two lines every CMS request fails with a permission error.
+-- Only the two verbs the function actually uses are granted.
+grant select on table public.cms_profiles to service_role;
+grant insert on table public.cms_audit_logs to service_role;
+
 create policy "users can read only their cms profile"
 on public.cms_profiles
 for select

@@ -158,6 +158,16 @@ function requireEnvironment(name: string): string {
   return value;
 }
 
+// Projects created before November 2025 receive SUPABASE_SERVICE_ROLE_KEY automatically; newer ones
+// do not, and the SUPABASE_ prefix is reserved so it cannot be added with `secrets set`. Accept a
+// self-named secret first so the function works on either vintage, and survives the legacy key's
+// end-of-2026 deprecation.
+function secretKey(): string {
+  const own = Deno.env.get("CMS_SUPABASE_SECRET_KEY")?.trim();
+  if (own) return own;
+  return requireEnvironment("SUPABASE_SERVICE_ROLE_KEY");
+}
+
 function repositoryParts(): [string, string] {
   const parts = REPOSITORY.split("/");
   if (
@@ -467,7 +477,7 @@ async function authenticate(
   if (!token) throw new HttpError(401, "로그인이 필요합니다.");
 
   const supabaseUrl = requireEnvironment("SUPABASE_URL");
-  const serviceKey = requireEnvironment("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceKey = secretKey();
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: {
       persistSession: false,
@@ -506,7 +516,7 @@ async function audit(
 ): Promise<void> {
   const admin = createClient(
     requireEnvironment("SUPABASE_URL"),
-    requireEnvironment("SUPABASE_SERVICE_ROLE_KEY"),
+    secretKey(),
     {
       auth: { persistSession: false, autoRefreshToken: false },
     },
