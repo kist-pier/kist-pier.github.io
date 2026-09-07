@@ -1545,6 +1545,29 @@ span.gallery-date {
   }
 }
 
+.project-group-heading {
+  margin: 0 0 1rem;
+
+  h3 {
+    color: $text;
+    font-size: 1.05rem;
+    font-weight: 750;
+    margin: 0 0 0.2rem;
+  }
+
+  p {
+    color: $text-muted;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+}
+
+.project-group-heading-spaced {
+  border-top: 1px solid $border;
+  margin-top: 3rem;
+  padding-top: 2rem;
+}
+
 .project-card {
   background: white;
   border-radius: 16px;
