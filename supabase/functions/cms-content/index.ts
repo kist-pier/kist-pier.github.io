@@ -702,6 +702,167 @@ function hasSignature(bytes: Uint8Array, signature: number[]): boolean {
   return signature.every((byte, index) => bytes[index] === byte);
 }
 
+// ---------------------------------------------------------------------------
+// BibTeX. Entries are parsed into fields and written back in the file's own layout;
+// anything between entries (the year headings) is carried through untouched, and a
+// field the editor does not know about survives a save.
+// ---------------------------------------------------------------------------
+
+type BibField = { name: string; value: string };
+type BibEntry = {
+  kind: "entry";
+  type: string;
+  key: string;
+  fields: BibField[];
+};
+type BibBlock = { kind: "raw"; text: string } | BibEntry;
+
+const BIB_EDITABLE_FIELDS = new Set([
+  "title",
+  "author",
+  "journal",
+  "booktitle",
+  "year",
+  "pages",
+  "volume",
+  "number",
+  "publisher",
+  "school",
+  "abbr",
+  "doi",
+  "url",
+  "arxiv",
+  "abstract",
+  "preview",
+  "selected",
+  "bibtex_show",
+  "show_all_authors",
+]);
+
+function parseBibtex(source: string): BibBlock[] {
+  const blocks: BibBlock[] = [];
+  let index = 0;
+  let raw = "";
+  const flush = () => {
+    if (raw) {
+      blocks.push({ kind: "raw", text: raw });
+      raw = "";
+    }
+  };
+  while (index < source.length) {
+    if (source[index] !== "@") {
+      raw += source[index++];
+      continue;
+    }
+    const start = index;
+    index += 1;
+    let type = "";
+    while (index < source.length && /[A-Za-z]/.test(source[index])) {
+      type += source[index++];
+    }
+    while (index < source.length && /\s/.test(source[index])) index += 1;
+    if (source[index] !== "{") {
+      raw += source.slice(start, index);
+      continue;
+    }
+    index += 1;
+    let key = "";
+    while (
+      index < source.length && source[index] !== "," && source[index] !== "}"
+    ) {
+      key += source[index++];
+    }
+    const fields: BibField[] = [];
+    while (index < source.length && source[index] !== "}") {
+      if (source[index] === "," || /\s/.test(source[index])) {
+        index += 1;
+        continue;
+      }
+      let name = "";
+      while (index < source.length && /[A-Za-z0-9_]/.test(source[index])) {
+        name += source[index++];
+      }
+      while (index < source.length && /\s/.test(source[index])) index += 1;
+      if (source[index] !== "=") break;
+      index += 1;
+      while (index < source.length && /\s/.test(source[index])) index += 1;
+      let value = "";
+      if (source[index] === "{") {
+        let depth = 0;
+        do {
+          if (source[index] === "{") depth += 1;
+          else if (source[index] === "}") depth -= 1;
+          value += source[index++];
+        } while (index < source.length && depth > 0);
+        value = value.slice(1, -1);
+      } else if (source[index] === '"') {
+        index += 1;
+        while (index < source.length && source[index] !== '"') {
+          value += source[index++];
+        }
+        index += 1;
+      } else {
+        while (index < source.length && !/[,}\s]/.test(source[index])) {
+          value += source[index++];
+        }
+      }
+      fields.push({ name: name.trim(), value });
+    }
+    index += 1;
+    flush();
+    blocks.push({ kind: "entry", type, key: key.trim(), fields });
+  }
+  flush();
+  return blocks;
+}
+
+// Reproduces the file's own column alignment, so a save that changes nothing is byte-identical.
+function formatBibEntry(entry: BibEntry): string {
+  const body = entry.fields.map((field, position) =>
+    `  ${
+      field.name.length >= 13 ? `${field.name} ` : field.name.padEnd(13)
+    }= {${field.value}}${position === entry.fields.length - 1 ? "" : ","}`
+  ).join("\n");
+  return `@${entry.type}{${entry.key},\n${body}\n}`;
+}
+
+function serializeBibtex(blocks: BibBlock[]): string {
+  return blocks.map((block) =>
+    block.kind === "raw" ? block.text : formatBibEntry(block)
+  ).join("");
+}
+
+function safeBibValue(value: unknown, field: string): string {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (raw.length > 4000) throw new HttpError(400, `${field} 값이 너무 깁니다.`);
+  if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(raw)) {
+    throw new HttpError(400, `${field}에 사용할 수 없는 문자가 있습니다.`);
+  }
+  let depth = 0;
+  for (const character of raw) {
+    if (character === "{") depth += 1;
+    if (character === "}") depth -= 1;
+    if (depth < 0) {
+      throw new HttpError(400, `${field}의 중괄호가 맞지 않습니다.`);
+    }
+  }
+  if (depth !== 0) {
+    throw new HttpError(400, `${field}의 중괄호가 맞지 않습니다.`);
+  }
+  return raw.replace(/\s*\n\s*/g, " ");
+}
+
+function safeBibKey(value: unknown): string {
+  const key = typeof value === "string" ? value.trim() : "";
+  if (!/^[A-Za-z][A-Za-z0-9_:.-]{2,80}$/.test(key)) {
+    throw new HttpError(
+      400,
+      "Citation key는 영문으로 시작하는 3자 이상이어야 합니다.",
+    );
+  }
+  return key;
+}
+
 function safeIsoDate(value: unknown, field: string): string {
   const raw = safePlainText(value, field, 10);
   const valid = /^\d{4}-(0[1-9]|1[0-2])-([012]\d|3[01])$/.test(raw) &&
@@ -1189,6 +1350,181 @@ async function handleAction(
     return isCv
       ? { ...saved, cv: `/${path}` }
       : { ...saved, image: `/${path}` };
+  }
+
+  if (action === "admin.pubs.read") {
+    requireAdmin(profile);
+    const file = await readGitHubFile("_bibliography/papers.bib");
+    const blocks = parseBibtex(file.content);
+    return {
+      sha: file.sha,
+      editable: [...BIB_EDITABLE_FIELDS],
+      entries: blocks.filter((block): block is BibEntry =>
+        block.kind === "entry"
+      ).map((entry) => ({
+        key: entry.key,
+        type: entry.type,
+        fields: Object.fromEntries(
+          entry.fields.map((field) => [field.name, field.value]),
+        ),
+        order: entry.fields.map((field) => field.name),
+      })),
+    };
+  }
+
+  // Turns a pasted BibTeX record into form values. Nothing is written.
+  if (action === "admin.pubs.parse") {
+    requireAdmin(profile);
+    const text = typeof body.bibtex === "string" ? body.bibtex : "";
+    if (text.length > 20_000) throw new HttpError(400, "BibTeX가 너무 깁니다.");
+    const entry = parseBibtex(text).find(
+      (block): block is BibEntry => block.kind === "entry",
+    );
+    if (!entry) throw new HttpError(400, "BibTeX 항목을 찾지 못했습니다.");
+    return {
+      key: entry.key,
+      type: entry.type,
+      fields: Object.fromEntries(
+        entry.fields.map((field) => [field.name, field.value]),
+      ),
+    };
+  }
+
+  if (action === "admin.pubs.save") {
+    requireAdmin(profile);
+    if (typeof body.sha !== "string") {
+      throw new HttpError(400, "papers.bib revision이 없습니다.");
+    }
+    const rows = body.entries;
+    if (!Array.isArray(rows) || rows.length > 500) {
+      throw new HttpError(400, "논문 목록이 올바르지 않습니다.");
+    }
+
+    // Validate everything before touching the file.
+    const incoming = rows.map((row) => {
+      const record = (row && typeof row === "object" ? row : {}) as Record<
+        string,
+        unknown
+      >;
+      const type = safePlainText(record.type ?? "article", "Type", 30)
+        .toLowerCase();
+      if (!/^[a-z]+$/.test(type)) {
+        throw new HttpError(400, "Entry type이 올바르지 않습니다.");
+      }
+      const fields = (record.fields && typeof record.fields === "object"
+        ? record.fields
+        : {}) as Record<string, unknown>;
+      const clean: Record<string, string> = {};
+      for (const [name, value] of Object.entries(fields)) {
+        if (!BIB_EDITABLE_FIELDS.has(name)) {
+          continue;
+        }
+        const text = safeBibValue(value, name);
+        if (text) {
+          clean[name] = text;
+        }
+      }
+      if (!clean.title) {
+        throw new HttpError(400, "Title은 비워둘 수 없습니다.");
+      }
+      if (!clean.author) {
+        throw new HttpError(400, "Author는 비워둘 수 없습니다.");
+      }
+      if (!clean.year || !/^\d{4}$/.test(clean.year)) {
+        throw new HttpError(400, "Year는 네 자리 숫자여야 합니다.");
+      }
+      return { key: safeBibKey(record.key), type, fields: clean };
+    });
+
+    const seenKeys = new Set<string>();
+    for (const entry of incoming) {
+      if (seenKeys.has(entry.key)) {
+        throw new HttpError(409, `중복된 citation key입니다: ${entry.key}`);
+      }
+      seenKeys.add(entry.key);
+    }
+
+    const file = await readGitHubFile("_bibliography/papers.bib");
+    if (file.sha !== body.sha) {
+      throw new HttpError(409, "papers.bib이 다른 곳에서 먼저 수정되었습니다.");
+    }
+    const blocks = parseBibtex(file.content);
+    const byKey = new Map<string, BibEntry>();
+    for (const block of blocks) {
+      if (block.kind === "entry") {
+        byKey.set(block.key, block);
+      }
+    }
+
+    let added = 0;
+    let removed = 0;
+    const fresh: BibEntry[] = [];
+    for (const entry of incoming) {
+      const existing = byKey.get(entry.key);
+      if (existing) {
+        existing.type = entry.type;
+        // Update in place, keeping field order, then append fields that are new to this entry.
+        for (const field of existing.fields) {
+          if (entry.fields[field.name] !== undefined) {
+            field.value = entry.fields[field.name];
+          }
+        }
+        const present = new Set(existing.fields.map((field) => field.name));
+        // A known field cleared in the form is dropped; unknown fields are never touched.
+        existing.fields = existing.fields.filter((field) =>
+          !BIB_EDITABLE_FIELDS.has(field.name) ||
+          entry.fields[field.name] !== undefined
+        );
+        for (const [name, value] of Object.entries(entry.fields)) {
+          if (!present.has(name)) existing.fields.push({ name, value });
+        }
+      } else {
+        fresh.push({
+          kind: "entry",
+          type: entry.type,
+          key: entry.key,
+          fields: Object.entries(entry.fields).map(([name, value]) => ({
+            name,
+            value,
+          })),
+        });
+        added += 1;
+      }
+    }
+
+    for (let position = blocks.length - 1; position >= 0; position -= 1) {
+      const block = blocks[position];
+      if (block.kind === "entry" && !seenKeys.has(block.key)) {
+        blocks.splice(position, 1);
+        removed += 1;
+      }
+    }
+
+    // New records go above the first existing one, where the newest year already lives.
+    const firstEntry = blocks.findIndex((block) => block.kind === "entry");
+    const insertAt = firstEntry === -1 ? blocks.length : firstEntry;
+    for (const entry of fresh.reverse()) {
+      blocks.splice(insertAt, 0, entry, { kind: "raw", text: "\n\n" });
+    }
+
+    const saved = await saveGitHubFile(
+      "_bibliography/papers.bib",
+      serializeBibtex(blocks),
+      "cms: update publications",
+      file.sha,
+    );
+    await audit(
+      profile,
+      "admin.pubs.save",
+      "_bibliography/papers.bib",
+      saved.commit_sha,
+      {
+        added,
+        removed,
+        total: incoming.length,
+      },
+    );
+    return { ...saved, added, removed };
   }
 
   if (action === "admin.gallery.read") {

@@ -467,3 +467,53 @@ textarea { line-height: 1.55; resize: vertical; }
   opacity: 0.6;
   pointer-events: none;
 }
+
+/* ── Publications editor ───────────────────────────────────────────────────── */
+
+.cms-list-title-plain {
+  text-transform: none;
+}
+
+.cms-badge-star {
+  background: #fff4e5;
+  color: #8a5300;
+}
+
+.pubs-bibtex {
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cms-border, #e8eaf0);
+  border-radius: 8px;
+  background: #fafbfe;
+}
+
+.pubs-bibtex > summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.pubs-bibtex textarea {
+  width: 100%;
+  margin: 0.75rem 0 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.pubs-check {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.pubs-check input {
+  width: auto;
+}
+
+.pubs-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  color: #6b7080;
+}

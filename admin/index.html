@@ -137,6 +137,45 @@ sitemap: false
           </div>
         </section>
 
+        <section id="pubs-manager" class="panel" hidden>
+          <div id="pubs-list-view">
+            <div class="panel-heading">
+              <div>
+                <h2>Publications</h2>
+                <p id="pubs-count">불러오는 중…</p>
+              </div>
+              <div class="panel-actions">
+                <button id="pubs-reload" class="button button-secondary" type="button">Reload</button>
+                <button id="pubs-new" class="button button-primary" type="button">New item</button>
+              </div>
+            </div>
+            <div class="editor-meta">
+              <code>_bibliography/papers.bib</code>
+              <span id="pubs-sha"></span>
+            </div>
+            <div id="pubs-items" class="cms-list"></div>
+          </div>
+
+          <div id="pubs-edit-view" hidden>
+            <div class="panel-heading">
+              <div>
+                <h2 id="pubs-edit-title">Publication</h2>
+                <p>Google Scholar의 BibTeX를 붙여넣으면 아래 칸이 한 번에 채워집니다.</p>
+              </div>
+              <button id="pubs-edit-back" class="button button-secondary" type="button">← 목록으로</button>
+            </div>
+            <details class="pubs-bibtex">
+              <summary>BibTeX 붙여넣기</summary>
+              <textarea id="pubs-bibtex" rows="8" spellcheck="false" placeholder="@inproceedings{key2026name,&#10;  title={...},&#10;  author={...},&#10;  year={2026}&#10;}"></textarea>
+              <button id="pubs-fill" class="button button-secondary" type="button">Fill from BibTeX</button>
+            </details>
+            <div class="form-grid" id="pubs-fields"></div>
+            <div class="form-actions">
+              <button id="pubs-edit-save" class="button button-primary" type="button">Save &amp; publish</button>
+            </div>
+          </div>
+        </section>
+
         <section id="gallery-editor" class="panel" hidden>
           <div class="panel-heading">
             <div>

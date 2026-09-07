@@ -84,7 +84,46 @@
     galleryReload: document.getElementById("gallery-reload"),
     galleryAdd: document.getElementById("gallery-add"),
     galleryFile: document.getElementById("gallery-file"),
+    pubsManager: document.getElementById("pubs-manager"),
+    pubsListView: document.getElementById("pubs-list-view"),
+    pubsEditView: document.getElementById("pubs-edit-view"),
+    pubsItems: document.getElementById("pubs-items"),
+    pubsCount: document.getElementById("pubs-count"),
+    pubsSha: document.getElementById("pubs-sha"),
+    pubsReload: document.getElementById("pubs-reload"),
+    pubsNew: document.getElementById("pubs-new"),
+    pubsEditBack: document.getElementById("pubs-edit-back"),
+    pubsEditTitle: document.getElementById("pubs-edit-title"),
+    pubsFields: document.getElementById("pubs-fields"),
+    pubsBibtex: document.getElementById("pubs-bibtex"),
+    pubsFill: document.getElementById("pubs-fill"),
+    pubsEditSave: document.getElementById("pubs-edit-save"),
   };
+
+  const PUB_TYPES = ["article", "inproceedings", "incollection", "phdthesis", "misc"];
+  const PUB_FIELDS = [
+    { name: "key", label: "Citation key", required: true, hint: "예: joung2026agiledp" },
+    { name: "type", label: "Entry type", select: PUB_TYPES },
+    { name: "title", label: "Title", wide: true, required: true },
+    { name: "author", label: "Authors", wide: true, required: true, hint: "Last, First and Last, First" },
+    { name: "journal", label: "Journal" },
+    { name: "booktitle", label: "Booktitle (학회)" },
+    { name: "year", label: "Year", required: true },
+    { name: "abbr", label: "Abbr (배지에 표시)" },
+    { name: "volume", label: "Volume" },
+    { name: "number", label: "Number" },
+    { name: "pages", label: "Pages" },
+    { name: "publisher", label: "Publisher" },
+    { name: "school", label: "School" },
+    { name: "doi", label: "DOI" },
+    { name: "url", label: "URL" },
+    { name: "arxiv", label: "arXiv id" },
+    { name: "preview", label: "Preview 이미지 파일명" },
+    { name: "abstract", label: "Abstract", wide: true, area: true },
+    { name: "selected", label: "Selected (대표 논문)", bool: true },
+    { name: "bibtex_show", label: "BibTeX 버튼 표시", bool: true },
+    { name: "show_all_authors", label: "저자 전체 표시", bool: true },
+  ];
 
   // The four sections that share one field set. PI and alumni keep the raw-source editor.
   const MEMBER_SECTIONS = [
@@ -143,6 +182,10 @@
         profile: { email: LOCAL_DEMO_EMAIL, display_name: "PIER Lab Local Admin", role: "admin", member_id: null },
         resources: [...LOCAL_DEMO_RESOURCES, ...demoNewsResources()],
       };
+    }
+
+    if (body.action === "admin.pubs.read") {
+      return { sha: demoRevision(), editable: [], entries: [] };
     }
 
     if (body.action === "admin.gallery.read") {
@@ -215,6 +258,7 @@
     const views = {
       members: elements.membersEditor,
       gallery: elements.galleryEditor,
+      pubs: elements.pubsManager,
       news: elements.newsManager,
       newsNew: elements.newsCreator,
       content: elements.adminEditor,
@@ -231,6 +275,7 @@
     const titles = {
       members: "Members",
       gallery: "Gallery",
+      pubs: "Publications",
       news: "News",
       newsNew: "New News",
       profile: "My Profile",
@@ -270,6 +315,7 @@
         { view: "members", label: "Members" },
         { view: "news", label: "News" },
         { view: "gallery", label: "Gallery" },
+        { view: "pubs", label: "Publications" },
         { view: "content", label: "Website content" },
       ]
       : [];
@@ -289,6 +335,10 @@
           loadNews();
         }
         if (item.view === "gallery" && !gallerySha) loadGallery();
+        if (item.view === "pubs") {
+          showPubsList();
+          if (!pubsSha) loadPubs();
+        }
         if (item.view === "content" && !currentResource && resources.length) {
           loadResource(elements.resourceSelect.value || resources[0].id);
         }
@@ -731,6 +781,221 @@
 
   elements.membersSave.addEventListener("click", saveMembers);
   elements.membersReload.addEventListener("click", loadMembers);
+
+  // ── Publications ───────────────────────────────────────────────────────────
+  let pubsSha = "";
+  let pubsEntries = [];
+  let pubsEditingKey = null;
+
+  function pubsRow(entry) {
+    const row = document.createElement("div");
+    row.className = "cms-list-row";
+    const main = document.createElement("div");
+    main.className = "cms-list-main";
+    const title = document.createElement("div");
+    title.className = "cms-list-title cms-list-title-plain";
+    title.textContent = entry.fields.title || entry.key;
+    const meta = document.createElement("div");
+    meta.className = "cms-list-meta";
+    [entry.fields.abbr, entry.fields.year, entry.type].filter(Boolean).forEach((text) => {
+      const badge = document.createElement("span");
+      badge.className = "cms-badge";
+      badge.textContent = text;
+      meta.append(badge);
+    });
+    if (entry.fields.selected === "true") {
+      const star = document.createElement("span");
+      star.className = "cms-badge cms-badge-star";
+      star.textContent = "★ selected";
+      meta.append(star);
+    }
+    const authors = document.createElement("code");
+    authors.textContent = entry.key;
+    meta.append(authors);
+    main.append(title, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "cms-list-actions";
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "button button-secondary";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", () => openPub(entry.key));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "button button-danger";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", () => removePub(entry));
+    actions.append(edit, remove);
+    row.append(main, actions);
+    return row;
+  }
+
+  function renderPubs() {
+    elements.pubsCount.textContent = `${pubsEntries.length}편`;
+    elements.pubsItems.replaceChildren(...pubsEntries.map(pubsRow));
+  }
+
+  async function loadPubs() {
+    elements.pubsCount.textContent = "불러오는 중…";
+    elements.pubsItems.replaceChildren();
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.pubs.read" });
+      pubsSha = data.sha;
+      pubsEntries = data.entries || [];
+      elements.pubsSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      renderPubs();
+    } catch (error) {
+      elements.pubsCount.textContent = "";
+      showStatus(error.message, "error");
+    }
+  }
+
+  function renderPubForm(entry) {
+    elements.pubsFields.replaceChildren(...PUB_FIELDS.map((spec) => {
+      let control;
+      if (spec.bool) {
+        control = document.createElement("input");
+        control.type = "checkbox";
+        control.checked = (entry.fields[spec.name] || "") === "true";
+      } else if (spec.select) {
+        control = document.createElement("select");
+        spec.select.forEach((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          control.append(option);
+        });
+        control.value = entry.type || spec.select[0];
+      } else if (spec.area) {
+        control = document.createElement("textarea");
+        control.rows = 5;
+        control.value = entry.fields[spec.name] || "";
+      } else {
+        control = document.createElement("input");
+        control.type = "text";
+        control.value = spec.name === "key" ? (entry.key || "") : (entry.fields[spec.name] || "");
+        if (spec.required) control.required = true;
+      }
+      control.dataset.field = spec.name;
+      const wrap = labelled(spec.required ? `${spec.label} *` : spec.label, control, spec.wide);
+      if (spec.bool) wrap.classList.add("pubs-check");
+      if (spec.hint) {
+        const hint = document.createElement("small");
+        hint.className = "pubs-hint";
+        hint.textContent = spec.hint;
+        wrap.append(hint);
+      }
+      return wrap;
+    }));
+  }
+
+  function collectPub() {
+    const fields = {};
+    let key = "";
+    let type = "article";
+    PUB_FIELDS.forEach((spec) => {
+      const node = elements.pubsFields.querySelector(`[data-field="${spec.name}"]`);
+      if (!node) return;
+      if (spec.name === "key") { key = node.value.trim(); return; }
+      if (spec.name === "type") { type = node.value; return; }
+      if (spec.bool) { if (node.checked) fields[spec.name] = "true"; return; }
+      const value = node.value.trim();
+      if (value) fields[spec.name] = value;
+    });
+    return { key, type, fields };
+  }
+
+  function showPubsList() {
+    elements.pubsListView.hidden = false;
+    elements.pubsEditView.hidden = true;
+    pubsEditingKey = null;
+    showStatus("");
+  }
+
+  function openPub(key) {
+    const entry = pubsEntries.find((item) => item.key === key) ||
+      { key: "", type: "article", fields: {} };
+    pubsEditingKey = key;
+    elements.pubsEditTitle.textContent = entry.fields.title || "New publication";
+    elements.pubsBibtex.value = "";
+    renderPubForm(entry);
+    elements.pubsListView.hidden = true;
+    elements.pubsEditView.hidden = false;
+    showStatus("");
+  }
+
+  async function savePub() {
+    const edited = collectPub();
+    if (!edited.key || !edited.fields.title || !edited.fields.author || !edited.fields.year) {
+      showStatus("Citation key, Title, Authors, Year는 필수입니다.", "error");
+      return;
+    }
+    const next = pubsEntries.filter((item) => item.key !== pubsEditingKey);
+    if (pubsEditingKey === null) next.unshift(edited);
+    else {
+      const position = pubsEntries.findIndex((item) => item.key === pubsEditingKey);
+      next.splice(position === -1 ? 0 : position, 0, edited);
+    }
+    setBusy(elements.pubsEditSave, true, "Saving…");
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.pubs.save", sha: pubsSha, entries: next });
+      pubsSha = data.sha;
+      showStatus("저장했습니다. 배포가 끝나면 Publications 페이지에 반영됩니다.", "success");
+      await loadPubs();
+      showPubsList();
+    } catch (error) {
+      showStatus(
+        error.status === 409
+          ? "papers.bib이 다른 곳에서 먼저 수정되었습니다. Reload 후 다시 시도해 주세요."
+          : error.message,
+        "error",
+      );
+    } finally {
+      setBusy(elements.pubsEditSave, false);
+    }
+  }
+
+  async function removePub(entry) {
+    if (!window.confirm(`"${entry.fields.title || entry.key}" 을(를) 삭제할까요?`)) return;
+    showStatus("삭제 중…");
+    try {
+      const next = pubsEntries.filter((item) => item.key !== entry.key);
+      const data = await invoke({ action: "admin.pubs.save", sha: pubsSha, entries: next });
+      pubsSha = data.sha;
+      showStatus("삭제했습니다.", "success");
+      await loadPubs();
+    } catch (error) {
+      showStatus(error.message, "error");
+    }
+  }
+
+  elements.pubsReload.addEventListener("click", () => { showPubsList(); loadPubs(); });
+  elements.pubsEditBack.addEventListener("click", showPubsList);
+  elements.pubsEditSave.addEventListener("click", savePub);
+  elements.pubsNew.addEventListener("click", () => openPub(null));
+  elements.pubsFill.addEventListener("click", async () => {
+    const text = elements.pubsBibtex.value.trim();
+    if (!text) { showStatus("BibTeX를 붙여넣어 주세요.", "error"); return; }
+    setBusy(elements.pubsFill, true, "읽는 중…");
+    try {
+      const parsed = await invoke({ action: "admin.pubs.parse", bibtex: text });
+      // Keep whatever is already typed if the pasted record does not carry that field.
+      const current = collectPub();
+      renderPubForm({
+        key: parsed.key || current.key,
+        type: parsed.type || current.type,
+        fields: { ...current.fields, ...parsed.fields },
+      });
+      showStatus("BibTeX에서 채웠습니다. 확인 후 저장해 주세요.", "success");
+    } catch (error) {
+      showStatus(error.message, "error");
+    } finally {
+      setBusy(elements.pubsFill, false);
+    }
+  });
 
   // ── Gallery ────────────────────────────────────────────────────────────────
   let gallerySha = "";
