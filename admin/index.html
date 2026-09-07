@@ -137,6 +137,28 @@ sitemap: false
           </div>
         </section>
 
+        <section id="gallery-editor" class="panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2>Gallery</h2>
+              <p id="gallery-count">불러오는 중…</p>
+            </div>
+            <div class="panel-actions">
+              <button id="gallery-reload" class="button button-secondary" type="button">Reload</button>
+              <label class="button button-primary" id="gallery-add">사진 추가<input id="gallery-file" type="file" accept="image/*" multiple hidden></label>
+            </div>
+          </div>
+          <div class="editor-meta">
+            <code>_data/gallery.yml</code>
+            <span id="gallery-sha"></span>
+          </div>
+          <p class="members-note">저장하면 날짜 내림차순으로 자동 정렬됩니다. 새로 고른 사진은 Save를 눌러야 업로드됩니다.</p>
+          <div id="gallery-items" class="gallery-edit-grid"></div>
+          <div class="form-actions">
+            <button id="gallery-save" class="button button-primary" type="button">Save &amp; publish</button>
+          </div>
+        </section>
+
         <section id="news-manager" class="panel" hidden>
           <div id="news-list-view">
             <div class="panel-heading">

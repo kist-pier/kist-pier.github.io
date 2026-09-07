@@ -76,6 +76,14 @@
     newsEditDisplay: document.getElementById("news-edit-display"),
     newsEditBody: document.getElementById("news-edit-body"),
     newsEditSave: document.getElementById("news-edit-save"),
+    galleryEditor: document.getElementById("gallery-editor"),
+    galleryItems: document.getElementById("gallery-items"),
+    galleryCount: document.getElementById("gallery-count"),
+    gallerySha: document.getElementById("gallery-sha"),
+    gallerySave: document.getElementById("gallery-save"),
+    galleryReload: document.getElementById("gallery-reload"),
+    galleryAdd: document.getElementById("gallery-add"),
+    galleryFile: document.getElementById("gallery-file"),
   };
 
   // The four sections that share one field set. PI and alumni keep the raw-source editor.
@@ -135,6 +143,10 @@
         profile: { email: LOCAL_DEMO_EMAIL, display_name: "PIER Lab Local Admin", role: "admin", member_id: null },
         resources: [...LOCAL_DEMO_RESOURCES, ...demoNewsResources()],
       };
+    }
+
+    if (body.action === "admin.gallery.read") {
+      return { sha: demoRevision(), categories: ["lab-life", "conferences"], photos: [] };
     }
 
     if (body.action === "admin.news.list") {
@@ -202,6 +214,7 @@
   function showView(view) {
     const views = {
       members: elements.membersEditor,
+      gallery: elements.galleryEditor,
       news: elements.newsManager,
       newsNew: elements.newsCreator,
       content: elements.adminEditor,
@@ -217,6 +230,7 @@
     });
     const titles = {
       members: "Members",
+      gallery: "Gallery",
       news: "News",
       newsNew: "New News",
       profile: "My Profile",
@@ -255,6 +269,7 @@
       ? [
         { view: "members", label: "Members" },
         { view: "news", label: "News" },
+        { view: "gallery", label: "Gallery" },
         { view: "content", label: "Website content" },
       ]
       : [];
@@ -273,6 +288,7 @@
           showNewsList();
           loadNews();
         }
+        if (item.view === "gallery" && !gallerySha) loadGallery();
         if (item.view === "content" && !currentResource && resources.length) {
           loadResource(elements.resourceSelect.value || resources[0].id);
         }
@@ -415,6 +431,31 @@
           // Square crop from the top centre, matching object-position: center top on the site.
           context.drawImage(image, (image.width - side) / 2, 0, side, side, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
           resolve(canvas.toDataURL("image/jpeg", 0.88));
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Gallery photos keep their aspect ratio; only the long edge is capped.
+  function resizeToJpegMax(file, maxEdge, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("사진을 읽지 못했습니다."));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("이미지 형식을 인식하지 못했습니다."));
+        image.onload = () => {
+          const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(image.width * scale);
+          canvas.height = Math.round(image.height * scale);
+          const context = canvas.getContext("2d");
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
         };
         image.src = reader.result;
       };
@@ -690,6 +731,192 @@
 
   elements.membersSave.addEventListener("click", saveMembers);
   elements.membersReload.addEventListener("click", loadMembers);
+
+  // ── Gallery ────────────────────────────────────────────────────────────────
+  let gallerySha = "";
+  let galleryCategories = ["lab-life", "conferences"];
+
+  function today() {
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  }
+
+  function galleryCard(photo, pendingDataUrl) {
+    const card = document.createElement("article");
+    card.className = "gallery-edit-card";
+    // A newly picked file is held here and uploaded on Save, once its caption and date are
+    // known — that is what gives the committed file its proper name.
+    card.pendingDataUrl = pendingDataUrl || "";
+
+    const preview = document.createElement("img");
+    preview.className = "gallery-edit-preview";
+    preview.alt = "";
+    preview.src = pendingDataUrl || photo.image;
+
+    const fields = document.createElement("div");
+    fields.className = "gallery-edit-fields";
+
+    const caption = document.createElement("input");
+    caption.type = "text";
+    caption.dataset.field = "caption";
+    caption.value = photo.caption || "";
+    caption.required = true;
+    fields.append(labelled("Caption", caption, true));
+
+    const category = document.createElement("select");
+    category.dataset.field = "category";
+    galleryCategories.forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value === "lab-life" ? "Lab Life" : "Conferences";
+      category.append(option);
+    });
+    category.value = photo.category || galleryCategories[0];
+    fields.append(labelled("Category", category));
+
+    const date = document.createElement("input");
+    date.type = "date";
+    date.dataset.field = "date";
+    date.value = photo.date || today();
+    fields.append(labelled("Date", date));
+
+    const image = document.createElement("input");
+    image.type = "hidden";
+    image.dataset.field = "image";
+    image.value = photo.image || "";
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "text-button member-edit-remove";
+    remove.textContent = "삭제";
+    remove.addEventListener("click", () => {
+      if (window.confirm(`${caption.value || "이 사진"} 을(를) 목록에서 뺄까요?`)) {
+        card.remove();
+        elements.galleryCount.textContent =
+          `${elements.galleryItems.querySelectorAll(".gallery-edit-card").length}장`;
+      }
+    });
+
+    if (pendingDataUrl) {
+      const badge = document.createElement("span");
+      badge.className = "cms-badge gallery-edit-new";
+      badge.textContent = "미업로드";
+      fields.append(badge);
+    }
+
+    card.append(preview, fields, image, remove);
+    return card;
+  }
+
+  function renderGallery(photos) {
+    elements.galleryItems.replaceChildren(...photos.map((photo) => galleryCard(photo, "")));
+    elements.galleryCount.textContent = `${photos.length}장`;
+  }
+
+  async function loadGallery() {
+    elements.galleryItems.replaceChildren();
+    elements.galleryCount.textContent = "불러오는 중…";
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.gallery.read" });
+      gallerySha = data.sha;
+      if (Array.isArray(data.categories) && data.categories.length) {
+        galleryCategories = data.categories;
+      }
+      elements.gallerySha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      renderGallery(data.photos || []);
+    } catch (error) {
+      elements.galleryCount.textContent = "";
+      showStatus(error.message, "error");
+    }
+  }
+
+  function collectGallery() {
+    return Array.from(elements.galleryItems.querySelectorAll(".gallery-edit-card")).map((card) => ({
+      card,
+      image: card.querySelector('[data-field="image"]').value.trim(),
+      caption: card.querySelector('[data-field="caption"]').value.trim(),
+      category: card.querySelector('[data-field="category"]').value,
+      date: card.querySelector('[data-field="date"]').value,
+    }));
+  }
+
+  async function saveGallery() {
+    const rows = collectGallery();
+    const incomplete = rows.find((row) => !row.caption || !row.date);
+    if (incomplete) {
+      showStatus("Caption과 Date는 모두 채워야 합니다.", "error");
+      incomplete.card.scrollIntoView({ block: "center" });
+      return;
+    }
+    setBusy(elements.gallerySave, true, "Saving…");
+    showStatus("");
+    try {
+      // Upload the newly picked files first, so each one is committed under a name built from
+      // the caption and date the editor just entered.
+      const pending = rows.filter((row) => row.card.pendingDataUrl);
+      for (let index = 0; index < pending.length; index += 1) {
+        const row = pending[index];
+        showStatus(`사진 업로드 중… (${index + 1}/${pending.length})`);
+        const uploaded = await invoke({
+          action: "admin.gallery.image",
+          date: row.date,
+          caption: row.caption,
+          content_base64: row.card.pendingDataUrl.split(",")[1],
+        });
+        row.image = uploaded.image;
+        row.card.querySelector('[data-field="image"]').value = uploaded.image;
+        row.card.pendingDataUrl = "";
+        const badge = row.card.querySelector(".gallery-edit-new");
+        if (badge) badge.remove();
+      }
+
+      const data = await invoke({
+        action: "admin.gallery.save",
+        sha: gallerySha,
+        photos: rows.map(({ image, caption, category, date }) => ({ image, caption, category, date })),
+      });
+      gallerySha = data.sha;
+      elements.gallerySha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      renderGallery(data.photos || []);
+      showStatus("저장했습니다. 배포가 끝나면 Gallery 페이지에 반영됩니다.", "success");
+    } catch (error) {
+      showStatus(
+        error.status === 409
+          ? "gallery.yml이 다른 곳에서 먼저 수정되었습니다. Reload 후 다시 시도해 주세요."
+          : error.message,
+        "error",
+      );
+    } finally {
+      setBusy(elements.gallerySave, false);
+    }
+  }
+
+  elements.galleryReload.addEventListener("click", loadGallery);
+  elements.gallerySave.addEventListener("click", saveGallery);
+  elements.galleryFile.addEventListener("change", async () => {
+    const files = Array.from(elements.galleryFile.files || []);
+    elements.galleryFile.value = "";
+    if (!files.length) return;
+    elements.galleryAdd.classList.add("is-busy");
+    showStatus(`사진 ${files.length}장 준비 중…`);
+    try {
+      for (const file of files) {
+        const dataUrl = await resizeToJpegMax(file, 1600, 0.85);
+        const stem = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+        const card = galleryCard({ caption: stem, category: galleryCategories[0], date: today() }, dataUrl);
+        elements.galleryItems.prepend(card);
+      }
+      elements.galleryCount.textContent =
+        `${elements.galleryItems.querySelectorAll(".gallery-edit-card").length}장`;
+      showStatus("Caption과 날짜를 확인한 뒤 Save를 누르면 업로드됩니다.", "success");
+    } catch (error) {
+      showStatus(error.message, "error");
+    } finally {
+      elements.galleryAdd.classList.remove("is-busy");
+    }
+  });
 
   // ── News: list -> edit form ────────────────────────────────────────────────
   let newsEditing = null;

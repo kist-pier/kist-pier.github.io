@@ -620,6 +620,9 @@ const MEMBER_OPTIONAL_FIELDS = [
   "cv",
 ] as const;
 
+const GALLERY_IMAGE_DIR = "assets/img/gallery";
+const GALLERY_CATEGORIES = new Set(["lab-life", "conferences"]);
+const MAX_GALLERY_IMAGE_BYTES = 1_500_000;
 const MEMBER_IMAGE_DIR = "assets/img/members";
 const MEMBER_CV_DIR = "assets/pdf";
 const MAX_MEMBER_IMAGE_BYTES = 600_000;
@@ -697,6 +700,53 @@ function decodeUpload(
 
 function hasSignature(bytes: Uint8Array, signature: number[]): boolean {
   return signature.every((byte, index) => bytes[index] === byte);
+}
+
+function safeIsoDate(value: unknown, field: string): string {
+  const raw = safePlainText(value, field, 10);
+  const valid = /^\d{4}-(0[1-9]|1[0-2])-([012]\d|3[01])$/.test(raw) &&
+    new Date(`${raw}T00:00:00Z`).toISOString().slice(0, 10) === raw;
+  if (!valid) {
+    throw new HttpError(400, `${field} 형식이 올바르지 않습니다 (YYYY-MM-DD).`);
+  }
+  return raw;
+}
+
+function safeGalleryImage(value: unknown): string {
+  const raw = safePlainText(value, "Image", 200);
+  if (!/^\/assets\/img\/gallery\/[a-z0-9_-]+\.jpg$/.test(raw)) {
+    throw new HttpError(400, "사진 경로가 올바르지 않습니다.");
+  }
+  return raw;
+}
+
+function normalizeGalleryPhoto(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new HttpError(400, "사진 데이터가 올바르지 않습니다.");
+  }
+  const input = value as Record<string, unknown>;
+  const category = safePlainText(input.category ?? "", "Category", 40);
+  if (!GALLERY_CATEGORIES.has(category)) {
+    throw new HttpError(400, "허용되지 않은 카테고리입니다.");
+  }
+  const caption = safePlainText(input.caption ?? "", "Caption", 200);
+  if (!caption) throw new HttpError(400, "Caption은 비워둘 수 없습니다.");
+  return {
+    image: safeGalleryImage(input.image),
+    caption,
+    category,
+    date: safeIsoDate(input.date, "Date"),
+  };
+}
+
+// The gallery page renders site.data.gallery.photos in file order, so the file itself has to
+// stay sorted newest-first.
+function sortPhotos(
+  photos: Record<string, string>[],
+): Record<string, string>[] {
+  return photos.slice().sort((a, b) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : 0
+  );
 }
 
 function safeMemberImage(value: unknown): string {
@@ -1139,6 +1189,130 @@ async function handleAction(
     return isCv
       ? { ...saved, cv: `/${path}` }
       : { ...saved, image: `/${path}` };
+  }
+
+  if (action === "admin.gallery.read") {
+    requireAdmin(profile);
+    const file = await readGitHubFile("_data/gallery.yml");
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error("gallery.yml could not be parsed");
+    }
+    const data = document.toJS() as { photos?: Array<Record<string, unknown>> };
+    return {
+      sha: file.sha,
+      categories: [...GALLERY_CATEGORIES],
+      photos: (data.photos ?? []).map((photo) => ({
+        image: String(photo.image ?? ""),
+        caption: String(photo.caption ?? ""),
+        category: String(photo.category ?? ""),
+        date: String(photo.date ?? ""),
+      })),
+    };
+  }
+
+  if (action === "admin.gallery.save") {
+    requireAdmin(profile);
+    if (typeof body.sha !== "string") {
+      throw new HttpError(400, "gallery.yml revision이 없습니다.");
+    }
+    const rows = body.photos;
+    if (!Array.isArray(rows) || rows.length > 400) {
+      throw new HttpError(400, "사진 목록이 올바르지 않습니다.");
+    }
+    const photos = sortPhotos(rows.map(normalizeGalleryPhoto));
+    const seenImages = new Set<string>();
+    for (const photo of photos) {
+      if (seenImages.has(photo.image)) {
+        throw new HttpError(409, `같은 사진이 두 번 있습니다: ${photo.image}`);
+      }
+      seenImages.add(photo.image);
+    }
+
+    const file = await readGitHubFile("_data/gallery.yml");
+    if (file.sha !== body.sha) {
+      throw new HttpError(
+        409,
+        "gallery.yml이 다른 곳에서 먼저 수정되었습니다.",
+      );
+    }
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error("gallery.yml could not be parsed");
+    }
+
+    // Rebuilding the sequence is what lets the list be reordered, so the heading comment and the
+    // blank line between entries have to be put back by hand.
+    const previous = document.getIn(["photos"], true) as
+      | { commentBefore?: string }
+      | undefined;
+    const commentBefore = previous && typeof previous === "object"
+      ? previous.commentBefore
+      : undefined;
+    const sequence = document.createNode(
+      photos.map((photo) => ({
+        image: yamlQuoted(photo.image),
+        caption: yamlQuoted(photo.caption),
+        category: yamlQuoted(photo.category),
+        date: yamlQuoted(photo.date),
+      })),
+    ) as { commentBefore?: string; items?: Array<{ spaceBefore?: boolean }> };
+    if (commentBefore !== undefined) sequence.commentBefore = commentBefore;
+    (sequence.items ?? []).forEach((item, index) => {
+      if (index > 0) item.spaceBefore = true;
+    });
+    document.set("photos", sequence);
+
+    const saved = await saveGitHubFile(
+      "_data/gallery.yml",
+      document.toString(YAML_OUTPUT),
+      "cms: update gallery",
+      file.sha,
+    );
+    await audit(
+      profile,
+      "admin.gallery.save",
+      "_data/gallery.yml",
+      saved.commit_sha,
+      {
+        total: photos.length,
+      },
+    );
+    return { ...saved, photos };
+  }
+
+  if (action === "admin.gallery.image") {
+    requireAdmin(profile);
+    const date = safeIsoDate(body.date, "Date");
+    const slugSource = safePlainText(body.caption ?? "", "Caption", 200)
+      .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      .slice(0, 60) || "photo";
+    const { base64, bytes } = decodeUpload(
+      body.content_base64,
+      MAX_GALLERY_IMAGE_BYTES,
+    );
+    if (!hasSignature(bytes, [0xff, 0xd8, 0xff])) {
+      throw new HttpError(400, "JPEG 이미지만 올릴 수 있습니다.");
+    }
+    // Several photos can share a date and caption, so find the first free name.
+    let path = `${GALLERY_IMAGE_DIR}/${date}_${slugSource}.jpg`;
+    for (
+      let suffix = 2;
+      suffix <= 20 && await existingFileSha(path);
+      suffix += 1
+    ) {
+      path = `${GALLERY_IMAGE_DIR}/${date}_${slugSource}_${
+        String(suffix).padStart(2, "0")
+      }.jpg`;
+    }
+    const saved = await putGitHubFile(
+      path,
+      base64,
+      `cms: add gallery photo ${date}`,
+      await existingFileSha(path),
+    );
+    await audit(profile, "admin.gallery.image", path, saved.commit_sha);
+    return { ...saved, image: `/${path}` };
   }
 
   if (action === "admin.news.list") {
