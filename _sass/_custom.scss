@@ -581,7 +581,9 @@ nav.navbar {
       // Thumbnail column / badge
       .col.abbr {
         display: flex;
+        flex-direction: column;
         align-items: flex-start;
+        gap: 0.5rem;
         padding-top: 0.25rem;
 
         abbr.badge {
@@ -612,6 +614,52 @@ nav.navbar {
         img[src=""],
         img:not([src]) {
           display: none;
+        }
+      }
+
+      .venue-preview-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border: 1px solid $border;
+        border-radius: 8px;
+        background: #f7f8fc;
+      }
+
+      .venue-preview-image {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        padding: 0.45rem;
+        object-fit: contain;
+        background: white;
+      }
+
+      .venue-preview-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        padding: 0.5rem;
+        color: $primary;
+        font-size: 0.9rem;
+        font-weight: 800;
+        line-height: 1.15;
+        text-align: center;
+      }
+
+      @media (max-width: 575.98px) {
+        .col.abbr {
+          width: 9rem;
+          max-width: 9rem;
+          margin-bottom: 0.75rem;
         }
       }
 

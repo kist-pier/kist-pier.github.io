@@ -2,12 +2,13 @@
 ---
 <div class="row">
   {% if site.enable_publication_thumbnails %}
+    {% assign venue = site.data.venues[entry.abbr] %}
     <div class="col col-sm-2 abbr">
       {%- if entry.abbr -%}
-        {%- if site.data.venues[entry.abbr] -%}
+        {%- if venue -%}
           {% assign venue_style = null %}
-          {% if site.data.venues[entry.abbr].color != blank %}
-            {% assign venue_style = site.data.venues[entry.abbr].color | prepend: 'style="background-color:' | append: '"' %}
+          {% if venue.color != blank %}
+            {% assign venue_style = venue.color | prepend: 'style="background-color:' | append: '"' %}
           {%- endif -%}
           <abbr
             class="badge rounded w-100"
@@ -15,8 +16,8 @@
               {{ venue_style }}
             {% endif -%}
           >
-            {% if site.data.venues[entry.abbr].url %}
-              <a href="{{ site.data.venues[entry.abbr].url }}">{{ entry.abbr }}</a>
+            {% if venue.url %}
+              <a href="{{ venue.url }}">{{ entry.abbr }}</a>
             {% else %}
               <div>{{- entry.abbr -}}</div>
             {% endif %}
@@ -27,7 +28,7 @@
       {% endif %}
       {% if entry.preview %}
         {% if entry.preview contains '://' %}
-          <img class="preview z-depth-1 rounded" src="{{ entry.preview }}">
+          <img class="preview z-depth-1 rounded" src="{{ entry.preview }}" alt="Preview image for {{ entry.title | escape }}">
         {% else %}
           {% assign entry_path = entry.preview | prepend: '/assets/img/publication_preview/' %}
           {%
@@ -41,6 +42,22 @@
             alt=entry.preview
           %}
         {% endif %}
+      {% elsif venue.preview %}
+        <div class="venue-preview-card">
+          <span class="venue-preview-fallback" aria-hidden="true">{{ entry.abbr }}</span>
+          <img
+            class="venue-preview-image"
+            src="{{ venue.preview }}"
+            alt="{{ venue.preview_alt | default: entry.abbr | escape }}"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+            onerror="this.style.display='none'"
+          >
+        </div>
+      {% elsif entry.abbr %}
+        <div class="venue-preview-card venue-preview-card--fallback">
+          <span class="venue-preview-fallback">{{ entry.abbr }}</span>
+        </div>
       {% endif %}
     </div>
   {% endif %}

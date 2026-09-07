@@ -1,10 +1,13 @@
 # All venue badges are unified to lab primary blue (#2d3a8c)
 # The CSS in _custom.scss forces abbr.badge { background: #2d3a8c !important }
 # These color values are kept for reference / fallback only.
+# `preview` images are sourced from each venue/publisher's official website.
 
 "RA-L":
-  url: https://www.ieee.org/publications/rights/index.html
+  url: https://www.ieee-ras.org/publications/ieee-robotics-and-automation-letters/
   color: "#2d3a8c"
+  preview: "https://www.ieee-ras.org/wp-content/uploads/2025/05/ras_logo.jpg"
+  preview_alt: "IEEE Robotics and Automation Society logo"
 
 "T-RO":
   url: https://www.ieee.org/publications/rights/index.html
@@ -17,38 +20,67 @@
   color: "#2d3a8c"
 
 "IROS":
+  url: https://www.ieee-ras.org/conferences-workshops/financially-co-sponsored/iros/
   color: "#2d3a8c"
+  preview: "https://images.weserv.nl/?url=https://www.iros25.org/templates/iros2025/static/images/logo.png"
+  preview_alt: "IROS 2025 Hangzhou logo"
 
 "ICRA-W":
+  url: https://www.ieee-ras.org/conferences-workshops/fully-sponsored/icra/
   color: "#2d3a8c"
+  preview: "https://www.ieee-ras.org/wp-content/uploads/2025/05/ras_logo.jpg"
+  preview_alt: "IEEE Robotics and Automation Society logo"
 
 "ICARM":
+  url: https://www.ieee-arm.org/
   color: "#2d3a8c"
+  preview: "https://www.ieee-arm.org/icarm2025/wp-content/uploads/2024/10/arm-1-300x99.png"
+  preview_alt: "IEEE ARM conference logo"
 
 "T-Mech":
-  url: https://www.ieee.org/publications/rights/index.html
+  url: https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=3516
   color: "#2d3a8c"
+  preview: "https://www.ieee-ras.org/wp-content/uploads/2025/05/ras_logo.jpg"
+  preview_alt: "IEEE Robotics and Automation Society logo"
 
 "IJSR":
+  url: https://link.springer.com/journal/12369
   color: "#2d3a8c"
+  preview: "https://media.springernature.com/w300/springer-static/cover/journal/12369.jpg"
+  preview_alt: "International Journal of Social Robotics cover"
 
 "ISR":
+  url: https://link.springer.com/journal/11370
   color: "#2d3a8c"
+  preview: "https://media.springernature.com/w300/springer-static/cover/journal/11370.jpg"
+  preview_alt: "Intelligent Service Robotics cover"
 
 "Sensors":
+  url: https://www.mdpi.com/journal/sensors
   color: "#2d3a8c"
+  preview: "https://pub.mdpi-res.com/img/journals/sensors-logo.png"
+  preview_alt: "Sensors journal logo"
 
 "JKROS":
+  url: https://journal.kros.org/
   color: "#2d3a8c"
+  preview: "https://kros.org/images/main/logo.gif?2"
+  preview_alt: "Korea Robotics Society logo"
 
 "KSME":
   color: "#2d3a8c"
 
 "KROC":
+  url: https://kros.org/
   color: "#2d3a8c"
+  preview: "https://kros.org/images/main/logo.gif?2"
+  preview_alt: "Korea Robotics Society logo"
 
 "arXiv":
+  url: https://arxiv.org/
   color: "#2d3a8c"
+  preview: "https://info.arxiv.org/brand/images/brand-logo-primary.jpg"
+  preview_alt: "arXiv logo"
 
 "Thesis":
   color: "#2d3a8c"
@@ -57,7 +89,10 @@
   color: "#2d3a8c"
 
 "CoRL":
+  url: https://2026.corl.org/
   color: "#2d3a8c"
+  preview: "https://lh3.googleusercontent.com/sitesv/AG8ngQU3zOcn5yWwe-uhssHIPyP2b9ZN8rLz22E9dvNOu1skGnZ4sPl6VgpU9BEVF37-APgicVy2SV0ehzyi8sqRS_qvccdQIAqXCH_6Y0a-vDbQCAZ9FCUvsyO0Qnae58jghkHdefQEgSZMbWzsRBmRVpVPJVjhRcd2klTW1WAx3p2kBKacVznRjnQkJT0D8LY=w1280"
+  preview_alt: "CoRL 2026 logo"
 
 "RSS":
   color: "#2d3a8c"
