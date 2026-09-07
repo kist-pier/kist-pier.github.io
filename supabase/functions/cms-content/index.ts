@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.114.0";
 import { createAppAuth } from "npm:@octokit/auth-app@7.2.2";
-import { parseDocument } from "npm:yaml@2.9.0";
+import { parseDocument, Scalar } from "npm:yaml@2.9.0";
 
 type CmsRole = "admin" | "member";
 
@@ -108,6 +108,8 @@ const SELF_EDITABLE_MEMBER_SECTIONS = new Set([
   "undergrad",
 ]);
 const MAX_SOURCE_BYTES = 1_500_000;
+// Base64 inflates a binary upload by about a third, so the request cap is separate.
+const MAX_REQUEST_BYTES = 8_000_000;
 const REPOSITORY = Deno.env.get("GITHUB_REPOSITORY") ??
   "kist-pier/kist-pier.github.io";
 const BRANCH = Deno.env.get("GITHUB_BRANCH") ?? "main";
@@ -286,10 +288,20 @@ async function saveGitHubFile(
       "한 번에 저장할 수 있는 콘텐츠 크기를 초과했습니다.",
     );
   }
+  return await putGitHubFile(path, encodeBase64Utf8(content), message, sha);
+}
+
+// Commits content that is already base64 — used for images, which must not be re-encoded.
+async function putGitHubFile(
+  path: string,
+  base64: string,
+  message: string,
+  sha?: string,
+): Promise<{ sha: string; commit_sha: string; path: string }> {
   const [owner, repository] = repositoryParts();
   const payload: Record<string, string> = {
     message,
-    content: encodeBase64Utf8(content),
+    content: base64,
     branch: BRANCH,
   };
   if (sha) payload.sha = sha;
@@ -310,6 +322,90 @@ async function saveGitHubFile(
     commit_sha: commitSha,
     path: data.content?.path || path,
   };
+}
+
+async function deleteGitHubFile(
+  path: string,
+  message: string,
+  sha: string,
+): Promise<{ commit_sha: string; path: string }> {
+  const [owner, repository] = repositoryParts();
+  const data = await githubRequest(
+    `/repos/${encodeURIComponent(owner)}/${
+      encodeURIComponent(repository)
+    }/contents/${encodedPath(path)}`,
+    {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, sha, branch: BRANCH }),
+    },
+  ) as { commit?: { sha?: string } };
+  const commitSha = data.commit?.sha;
+  if (!commitSha) throw new Error("GitHub did not return a commit id");
+  return { commit_sha: commitSha, path };
+}
+
+const NEWS_FRONT_MATTER = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
+
+function parseNews(content: string): {
+  front: Record<string, string>;
+  body: string;
+} {
+  const match = content.match(NEWS_FRONT_MATTER);
+  if (!match) return { front: {}, body: content.trim() };
+  const front: Record<string, string> = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const at = line.indexOf(":");
+    if (at === -1) continue;
+    const key = line.slice(0, at).trim();
+    let value = line.slice(at + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    front[key] = value;
+  }
+  return { front, body: content.slice(match[0].length).trim() };
+}
+
+// Rewrites only the keys given, keeping every other front-matter line and its order, so a save
+// never silently drops a key the editor does not know about.
+function rewriteNews(
+  original: string,
+  updates: Record<string, string | null>,
+  body: string,
+): string {
+  const match = original.match(NEWS_FRONT_MATTER);
+  const lines = match
+    ? match[1].split(/\r?\n/)
+    : ["layout: post", "inline: true", "related_posts: false"];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const line of lines) {
+    const at = line.indexOf(":");
+    const key = at === -1 ? "" : line.slice(0, at).trim();
+    if (key && key in updates) {
+      seen.add(key);
+      const value = updates[key];
+      if (value !== null) out.push(`${key}: ${value}`);
+    } else {
+      out.push(line);
+    }
+  }
+  for (const [key, value] of Object.entries(updates)) {
+    if (!seen.has(key) && value !== null) out.push(`${key}: ${value}`);
+  }
+  return `---\n${out.join("\n")}\n---\n\n${body.trim()}\n`;
+}
+
+function newsPathFromId(resourceId: unknown): { path: string; name: string } {
+  const resource = resolveResource(resourceId);
+  if (resource.group !== "News") {
+    throw new HttpError(400, "News 항목이 아닙니다.");
+  }
+  return { path: resource.path, name: resource.label };
 }
 
 async function listNewsResources(): Promise<Resource[]> {
@@ -501,6 +597,213 @@ async function authenticate(
   return { profile: profile as CmsProfile };
 }
 
+// ---------------------------------------------------------------------------
+// Structured member editing (admin). `pi` and `alumni` have their own shapes and
+// stay with the raw-source editor; these four sections share one field set.
+// ---------------------------------------------------------------------------
+
+const ADMIN_MEMBER_SECTIONS = [
+  "phd",
+  "ms",
+  "research_interns",
+  "undergrad",
+] as const;
+// Written on every save, even when blank, because every entry carries them.
+const MEMBER_ALWAYS_FIELDS = ["name_en", "name_ko", "role", "email"] as const;
+const MEMBER_LIST_FIELDS = ["education", "research_areas"] as const;
+// Written only when non-empty, and removed when cleared — an `affiliation: ""` left
+// behind renders an empty element on the people page, since Liquid treats "" as truthy.
+const MEMBER_OPTIONAL_FIELDS = [
+  "image",
+  "affiliation",
+  "github",
+  "cv",
+] as const;
+
+const MEMBER_IMAGE_DIR = "assets/img/members";
+const MEMBER_CV_DIR = "assets/pdf";
+const MAX_MEMBER_IMAGE_BYTES = 600_000;
+const MAX_MEMBER_CV_BYTES = 4_000_000;
+
+// members.yml double-quotes every string except the two path fields, and its folded `bio`
+// block re-wraps at 99 columns. Writing plain scalars at another width would restyle parts of
+// the file the editor never touched, so a save's diff would hide the real change. With these
+// two settings a save that changes nothing produces a byte-identical file.
+const YAML_OUTPUT = { lineWidth: 99 };
+const YAML_PLAIN_FIELDS = new Set(["image", "cv"]);
+
+function yamlQuoted(value: string): Scalar {
+  const node = new Scalar(value);
+  node.type = Scalar.QUOTE_DOUBLE;
+  return node;
+}
+
+function yamlFieldValue(
+  field: string,
+  value: string | string[],
+): unknown {
+  if (YAML_PLAIN_FIELDS.has(field)) return value;
+  return Array.isArray(value) ? value.map(yamlQuoted) : yamlQuoted(value);
+}
+
+type AdminMember = Record<string, string | string[]>;
+
+function safeMemberId(value: unknown): string {
+  const id = safePlainText(value, "Member id", 80).toLowerCase();
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id)) {
+    throw new HttpError(
+      400,
+      "Member id는 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다.",
+    );
+  }
+  return id;
+}
+
+// intern-jiyeon-joung -> jiyeon_joung.jpg. Dropping the section prefix matches the
+// convention every existing photo already follows, so filenames cannot drift.
+function memberImageName(memberId: string): string {
+  const parts = safeMemberId(memberId).split("-");
+  return `${(parts.length > 1 ? parts.slice(1) : parts).join("_")}.jpg`;
+}
+
+// undergrad-wonseok-choi -> wonseok_choi_cv.pdf, matching the file already in assets/pdf.
+function memberCvName(memberId: string): string {
+  const parts = safeMemberId(memberId).split("-");
+  return `${(parts.length > 1 ? parts.slice(1) : parts).join("_")}_cv.pdf`;
+}
+
+function decodeUpload(
+  value: unknown,
+  limit: number,
+): { base64: string; bytes: Uint8Array } {
+  const base64 = typeof value === "string" ? value.replace(/\s/g, "") : "";
+  if (!base64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64)) {
+    throw new HttpError(400, "업로드 데이터가 올바르지 않습니다.");
+  }
+  let bytes: Uint8Array;
+  try {
+    bytes = Uint8Array.from(
+      atob(base64),
+      (character) => character.charCodeAt(0),
+    );
+  } catch {
+    throw new HttpError(400, "업로드 데이터를 읽을 수 없습니다.");
+  }
+  if (bytes.byteLength > limit) {
+    throw new HttpError(413, "파일 용량이 너무 큽니다.");
+  }
+  return { base64, bytes };
+}
+
+function hasSignature(bytes: Uint8Array, signature: number[]): boolean {
+  return signature.every((byte, index) => bytes[index] === byte);
+}
+
+function safeMemberImage(value: unknown): string {
+  const raw = safePlainText(value, "Image", 200);
+  if (!raw) return "";
+  if (!/^\/assets\/img\/members\/[a-z0-9_]+\.jpg$/.test(raw)) {
+    throw new HttpError(400, "프로필 사진 경로가 올바르지 않습니다.");
+  }
+  return raw;
+}
+
+function normalizeAdminMember(value: unknown): AdminMember {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new HttpError(400, "멤버 데이터가 올바르지 않습니다.");
+  }
+  const input = value as Record<string, unknown>;
+  const member: AdminMember = { id: safeMemberId(input.id) };
+
+  for (const field of MEMBER_ALWAYS_FIELDS) {
+    member[field] = safePlainText(input[field] ?? "", field, 300);
+  }
+  if (!member.name_en) {
+    throw new HttpError(400, "English name은 비워둘 수 없습니다.");
+  }
+  if (!member.role) throw new HttpError(400, "Role은 비워둘 수 없습니다.");
+
+  for (const field of MEMBER_LIST_FIELDS) {
+    const raw = input[field] ?? [];
+    if (!Array.isArray(raw) || raw.length > 20) {
+      throw new HttpError(400, `${field} 목록이 올바르지 않습니다.`);
+    }
+    member[field] = raw.map((item) => safePlainText(item, field, 300)).filter(
+      Boolean,
+    );
+  }
+
+  member.image = safeMemberImage(input.image);
+  member.affiliation = safePlainText(
+    input.affiliation ?? "",
+    "Affiliation",
+    300,
+  );
+  member.github = safeUrl(input.github ?? "", "GitHub");
+  member.cv = safeCv(input.cv ?? "");
+  return member;
+}
+
+function readAdminSections(
+  data: Record<string, unknown>,
+): Record<string, AdminMember[]> {
+  const sections: Record<string, AdminMember[]> = {};
+  for (const section of ADMIN_MEMBER_SECTIONS) {
+    const rows = Array.isArray(data[section])
+      ? data[section] as Array<Record<string, unknown>>
+      : [];
+    sections[section] = rows.map((row) => {
+      const member: AdminMember = { id: String(row.id ?? "") };
+      for (const field of MEMBER_ALWAYS_FIELDS) {
+        member[field] = typeof row[field] === "string"
+          ? row[field] as string
+          : "";
+      }
+      for (const field of MEMBER_LIST_FIELDS) {
+        member[field] = Array.isArray(row[field])
+          ? (row[field] as unknown[]).map((item) => String(item))
+          : [];
+      }
+      for (const field of MEMBER_OPTIONAL_FIELDS) {
+        member[field] = typeof row[field] === "string"
+          ? row[field] as string
+          : "";
+      }
+      return member;
+    });
+  }
+  return sections;
+}
+
+// Field order for a newly created entry, matching the existing file by eye.
+function memberNode(member: AdminMember): Record<string, unknown> {
+  const node: Record<string, unknown> = {};
+  const put = (field: string) => {
+    node[field] = yamlFieldValue(field, member[field]);
+  };
+  put("id");
+  put("name_en");
+  put("name_ko");
+  put("role");
+  if (member.image) put("image");
+  if (member.affiliation) put("affiliation");
+  put("education");
+  put("research_areas");
+  put("email");
+  if (member.github) put("github");
+  if (member.cv) put("cv");
+  return node;
+}
+
+async function existingFileSha(path: string): Promise<string | undefined> {
+  try {
+    return (await readGitHubFile(path)).sha;
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 404) return undefined;
+    throw error;
+  }
+}
+
 function requireAdmin(profile: CmsProfile): void {
   if (profile.role !== "admin") {
     throw new HttpError(403, "관리자 권한이 필요합니다.");
@@ -669,6 +972,251 @@ async function handleAction(
     };
   }
 
+  if (action === "admin.members.read") {
+    requireAdmin(profile);
+    const file = await readGitHubFile("_data/members.yml");
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error("members.yml could not be parsed");
+    }
+    return {
+      sha: file.sha,
+      sections: readAdminSections(document.toJS() as Record<string, unknown>),
+    };
+  }
+
+  if (action === "admin.members.save") {
+    requireAdmin(profile);
+    if (typeof body.sha !== "string") {
+      throw new HttpError(400, "members.yml revision이 없습니다.");
+    }
+    const requested = body.sections;
+    if (
+      !requested || typeof requested !== "object" || Array.isArray(requested)
+    ) {
+      throw new HttpError(400, "멤버 데이터가 올바르지 않습니다.");
+    }
+
+    // Validate everything before touching the document, and keep ids unique across sections.
+    const normalized: Record<string, AdminMember[]> = {};
+    const seenIds = new Set<string>();
+    for (const section of ADMIN_MEMBER_SECTIONS) {
+      const rows = (requested as Record<string, unknown>)[section] ?? [];
+      if (!Array.isArray(rows) || rows.length > 60) {
+        throw new HttpError(400, `${section} 목록이 올바르지 않습니다.`);
+      }
+      normalized[section] = rows.map((row) => {
+        const member = normalizeAdminMember(row);
+        const id = member.id as string;
+        if (seenIds.has(id)) {
+          throw new HttpError(409, `중복된 member id입니다: ${id}`);
+        }
+        seenIds.add(id);
+        return member;
+      });
+    }
+
+    const file = await readGitHubFile("_data/members.yml");
+    if (file.sha !== body.sha) {
+      throw new HttpError(
+        409,
+        "members.yml이 다른 곳에서 먼저 수정되었습니다.",
+      );
+    }
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error("members.yml could not be parsed");
+    }
+    const data = document.toJS() as Record<string, unknown>;
+
+    let added = 0;
+    let removed = 0;
+    for (const section of ADMIN_MEMBER_SECTIONS) {
+      const incoming = normalized[section];
+      const before = Array.isArray(data[section])
+        ? data[section] as Array<Record<string, unknown>>
+        : [];
+      const keep = new Set(incoming.map((member) => member.id as string));
+
+      // Delete back to front so the earlier indices stay valid.
+      for (let index = before.length - 1; index >= 0; index -= 1) {
+        const id = before[index]?.id;
+        if (typeof id === "string" && !keep.has(id)) {
+          document.deleteIn([section, index]);
+          removed += 1;
+        }
+      }
+
+      const survivors = before
+        .map((row) => row?.id)
+        .filter((id): id is string => typeof id === "string" && keep.has(id));
+
+      for (const member of incoming) {
+        const index = survivors.indexOf(member.id as string);
+        if (index === -1) continue;
+        for (const field of [...MEMBER_ALWAYS_FIELDS, ...MEMBER_LIST_FIELDS]) {
+          document.setIn(
+            [section, index, field],
+            yamlFieldValue(field, member[field]),
+          );
+        }
+        for (const field of MEMBER_OPTIONAL_FIELDS) {
+          if (member[field]) {
+            document.setIn(
+              [section, index, field],
+              yamlFieldValue(field, member[field]),
+            );
+          } else if (document.hasIn([section, index, field])) {
+            document.deleteIn([section, index, field]);
+          }
+        }
+      }
+
+      let appended = 0;
+      for (const member of incoming) {
+        if (survivors.includes(member.id as string)) continue;
+        document.addIn([section], memberNode(member));
+        appended += 1;
+      }
+      if (appended) {
+        added += appended;
+        // `phd: []` is a flow sequence; adding to it would keep everything on one line.
+        const node = document.getIn([section], true) as
+          | { flow?: boolean }
+          | undefined;
+        if (node && typeof node === "object") node.flow = false;
+      }
+    }
+
+    const saved = await saveGitHubFile(
+      "_data/members.yml",
+      document.toString(YAML_OUTPUT),
+      "cms: update members",
+      file.sha,
+    );
+    await audit(
+      profile,
+      "admin.members.save",
+      "_data/members.yml",
+      saved.commit_sha,
+      { added, removed, total: seenIds.size },
+    );
+    return { ...saved, added, removed };
+  }
+
+  if (action === "admin.members.image" || action === "admin.members.cv") {
+    requireAdmin(profile);
+    const memberId = safeMemberId(body.member_id);
+    const isCv = action === "admin.members.cv";
+    const { base64, bytes } = decodeUpload(
+      body.content_base64,
+      isCv ? MAX_MEMBER_CV_BYTES : MAX_MEMBER_IMAGE_BYTES,
+    );
+    // Trust the bytes, not the client: only the real format may reach the repository.
+    const ok = isCv
+      ? hasSignature(bytes, [0x25, 0x50, 0x44, 0x46])
+      : hasSignature(bytes, [0xff, 0xd8, 0xff]);
+    if (!ok) {
+      throw new HttpError(
+        400,
+        isCv
+          ? "PDF 파일만 올릴 수 있습니다."
+          : "JPEG 이미지만 올릴 수 있습니다.",
+      );
+    }
+    const path = isCv
+      ? `${MEMBER_CV_DIR}/${memberCvName(memberId)}`
+      : `${MEMBER_IMAGE_DIR}/${memberImageName(memberId)}`;
+    const saved = await putGitHubFile(
+      path,
+      base64,
+      `cms: update ${isCv ? "CV" : "photo"} for ${memberId}`,
+      await existingFileSha(path),
+    );
+    await audit(profile, action, path, saved.commit_sha, {
+      member_id: memberId,
+    });
+    return isCv
+      ? { ...saved, cv: `/${path}` }
+      : { ...saved, image: `/${path}` };
+  }
+
+  if (action === "admin.news.list") {
+    requireAdmin(profile);
+    const items = (await listNewsResources()).map((resource) => {
+      const match = resource.label.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.md$/);
+      return {
+        id: resource.id,
+        name: resource.label,
+        path: resource.path,
+        date: match ? match[1] : "",
+        slug: match ? match[2] : resource.label,
+      };
+    });
+    return { items };
+  }
+
+  if (action === "admin.news.item") {
+    requireAdmin(profile);
+    const { path, name } = newsPathFromId(body.resource_id);
+    const file = await readGitHubFile(path);
+    const { front, body: text } = parseNews(file.content);
+    return {
+      sha: file.sha,
+      path,
+      name,
+      date: (front.date || "").slice(0, 10),
+      display_date: front.display_date || "",
+      body: text,
+    };
+  }
+
+  if (action === "admin.news.update") {
+    requireAdmin(profile);
+    const { path, name } = newsPathFromId(body.resource_id);
+    if (typeof body.sha !== "string") {
+      throw new HttpError(400, "News revision이 없습니다.");
+    }
+    const text = typeof body.body === "string" ? body.body.trim() : "";
+    if (!text || text.length > 50_000) {
+      throw new HttpError(400, "News 본문의 길이를 확인해 주세요.");
+    }
+    if (text.includes("{{") || text.includes("{%")) {
+      throw new HttpError(400, "본문에 Liquid 코드를 넣을 수 없습니다.");
+    }
+    const displayDate = typeof body.display_date === "string"
+      ? safePlainText(body.display_date, "Display date", 80)
+      : "";
+    const file = await readGitHubFile(path);
+    if (file.sha !== body.sha) {
+      throw new HttpError(409, "이 News가 다른 곳에서 먼저 수정되었습니다.");
+    }
+    const content = rewriteNews(file.content, {
+      display_date: displayDate ? JSON.stringify(displayDate) : null,
+    }, text);
+    const saved = await saveGitHubFile(
+      path,
+      content,
+      `cms: update news ${name}`,
+      file.sha,
+    );
+    await audit(profile, "admin.news.update", path, saved.commit_sha);
+    return saved;
+  }
+
+  if (action === "admin.news.remove") {
+    requireAdmin(profile);
+    const { path, name } = newsPathFromId(body.resource_id);
+    const file = await readGitHubFile(path);
+    const removed = await deleteGitHubFile(
+      path,
+      `cms: remove news ${name}`,
+      file.sha,
+    );
+    await audit(profile, "admin.news.remove", path, removed.commit_sha);
+    return removed;
+  }
+
   if (action === "member.read") {
     const { file, member } = await memberFile(profile);
     const editable = Object.fromEntries(
@@ -692,9 +1240,9 @@ async function handleAction(
       throw new HttpError(409, "프로필이 다른 곳에서 먼저 수정되었습니다.");
     }
     for (const [field, value] of Object.entries(fields)) {
-      document.setIn([...memberPath, field], value);
+      document.setIn([...memberPath, field], yamlFieldValue(field, value));
     }
-    const content = document.toString({ lineWidth: 0 });
+    const content = document.toString(YAML_OUTPUT);
     const saved = await saveGitHubFile(
       "_data/members.yml",
       content,
@@ -725,7 +1273,7 @@ Deno.serve(async (request: Request) => {
     }
 
     const contentLength = Number(request.headers.get("content-length") || 0);
-    if (contentLength > MAX_SOURCE_BYTES * 1.5) {
+    if (contentLength > MAX_REQUEST_BYTES) {
       throw new HttpError(413, "요청 크기가 너무 큽니다.");
     }
     const body = await request.json().catch(() => null);

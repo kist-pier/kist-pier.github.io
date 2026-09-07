@@ -116,12 +116,80 @@ sitemap: false
           </div>
         </section>
 
+        <section id="members-editor" class="panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2>Members</h2>
+              <p>각 칸을 채워 수정합니다. 저장하면 GitHub에 커밋되고 홈페이지가 자동으로 다시 배포됩니다.</p>
+            </div>
+            <button id="members-reload" class="button button-secondary" type="button">Reload</button>
+          </div>
+          <div class="editor-meta">
+            <code>_data/members.yml</code>
+            <span id="members-sha"></span>
+          </div>
+          <div id="members-sections"></div>
+          <p class="members-note">
+            지도교수(PI)와 졸업생은 형식이 달라 <strong>Website content</strong>의 Members 원본 편집기에서 관리합니다.
+          </p>
+          <div class="form-actions">
+            <button id="members-save" class="button button-primary" type="button">Save &amp; publish</button>
+          </div>
+        </section>
+
+        <section id="news-manager" class="panel" hidden>
+          <div id="news-list-view">
+            <div class="panel-heading">
+              <div>
+                <h2>News</h2>
+                <p id="news-count">불러오는 중…</p>
+              </div>
+              <div class="panel-actions">
+                <button id="news-reload" class="button button-secondary" type="button">Reload</button>
+                <button id="news-new" class="button button-primary" type="button">New item</button>
+              </div>
+            </div>
+            <div id="news-items" class="cms-list"></div>
+          </div>
+
+          <div id="news-edit-view" hidden>
+            <div class="panel-heading">
+              <div>
+                <h2 id="news-edit-title">News</h2>
+                <div class="editor-meta">
+                  <code id="news-edit-path"></code>
+                  <span id="news-edit-sha"></span>
+                </div>
+              </div>
+              <button id="news-edit-back" class="button button-secondary" type="button">← 목록으로</button>
+            </div>
+            <div class="form-grid">
+              <div>
+                <label for="news-edit-date">Date</label>
+                <input id="news-edit-date" type="text" readonly>
+              </div>
+              <div>
+                <label for="news-edit-display">Display date <span>(optional)</span></label>
+                <input id="news-edit-display" type="text" placeholder="Sep 2026">
+              </div>
+              <div class="form-wide">
+                <label for="news-edit-body">Body <span>(Markdown)</span></label>
+                <textarea id="news-edit-body" rows="12"></textarea>
+              </div>
+              <div class="form-wide form-actions">
+                <button id="news-edit-save" class="button button-primary" type="button">Save &amp; publish</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section id="news-creator" class="panel" hidden>
           <div class="panel-heading">
             <div>
               <h2>New News item</h2>
               <p>날짜와 영문 slug로 새 News 파일을 만듭니다.</p>
             </div>
+            <button id="news-create-back" class="button button-secondary" type="button">← 목록으로</button>
           </div>
           <form id="news-form" class="form-grid">
             <div>

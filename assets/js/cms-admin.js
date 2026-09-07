@@ -55,7 +55,44 @@
     reloadResource: document.getElementById("reload-resource"),
     newsForm: document.getElementById("news-form"),
     memberForm: document.getElementById("member-form"),
+    membersEditor: document.getElementById("members-editor"),
+    membersSections: document.getElementById("members-sections"),
+    membersSha: document.getElementById("members-sha"),
+    membersSave: document.getElementById("members-save"),
+    membersReload: document.getElementById("members-reload"),
+    newsManager: document.getElementById("news-manager"),
+    newsListView: document.getElementById("news-list-view"),
+    newsEditView: document.getElementById("news-edit-view"),
+    newsItems: document.getElementById("news-items"),
+    newsCount: document.getElementById("news-count"),
+    newsReload: document.getElementById("news-reload"),
+    newsNew: document.getElementById("news-new"),
+    newsCreateBack: document.getElementById("news-create-back"),
+    newsEditBack: document.getElementById("news-edit-back"),
+    newsEditTitle: document.getElementById("news-edit-title"),
+    newsEditPath: document.getElementById("news-edit-path"),
+    newsEditSha: document.getElementById("news-edit-sha"),
+    newsEditDate: document.getElementById("news-edit-date"),
+    newsEditDisplay: document.getElementById("news-edit-display"),
+    newsEditBody: document.getElementById("news-edit-body"),
+    newsEditSave: document.getElementById("news-edit-save"),
   };
+
+  // The four sections that share one field set. PI and alumni keep the raw-source editor.
+  const MEMBER_SECTIONS = [
+    { key: "phd", label: "Ph.D. Students", prefix: "phd" },
+    { key: "ms", label: "M.S. Students", prefix: "ms" },
+    { key: "research_interns", label: "Research Interns", prefix: "intern" },
+    { key: "undergrad", label: "Undergraduate Researchers", prefix: "undergrad" },
+  ];
+  const MEMBER_TEXT_FIELDS = [
+    { name: "name_en", label: "English name", required: true },
+    { name: "name_ko", label: "한글 이름" },
+    { name: "role", label: "Role", required: true },
+    { name: "email", label: "Email" },
+    { name: "github", label: "GitHub URL", placeholder: "https://github.com/..." },
+  ];
+  const PHOTO_SIZE = 600;
 
   let client;
   let profile;
@@ -98,6 +135,14 @@
         profile: { email: LOCAL_DEMO_EMAIL, display_name: "PIER Lab Local Admin", role: "admin", member_id: null },
         resources: [...LOCAL_DEMO_RESOURCES, ...demoNewsResources()],
       };
+    }
+
+    if (body.action === "admin.news.list") {
+      return { items: demoNewsResources().map((item) => ({ id: item.id, name: item.label, path: item.path, date: item.label.slice(0, 10), slug: item.label.slice(11, -3) })) };
+    }
+
+    if (body.action === "admin.members.read") {
+      return { sha: demoRevision(), sections: { phd: [], ms: [], research_interns: [], undergrad: [] } };
     }
 
     if (body.action === "admin.read") {
@@ -156,17 +201,28 @@
 
   function showView(view) {
     const views = {
+      members: elements.membersEditor,
+      news: elements.newsManager,
+      newsNew: elements.newsCreator,
       content: elements.adminEditor,
-      news: elements.newsCreator,
       profile: elements.memberEditor,
     };
     Object.entries(views).forEach(([name, node]) => {
       node.hidden = name !== view;
     });
     document.querySelectorAll(".nav-button").forEach((button) => {
-      button.classList.toggle("active", button.dataset.view === view);
+      // "New item" has no nav entry of its own; it stays under News.
+      const owner = view === "newsNew" ? "news" : view;
+      button.classList.toggle("active", button.dataset.view === owner);
     });
-    elements.workspaceTitle.textContent = view === "news" ? "New News" : view === "profile" ? "My Profile" : "Content";
+    const titles = {
+      members: "Members",
+      news: "News",
+      newsNew: "New News",
+      profile: "My Profile",
+      content: "Content",
+    };
+    elements.workspaceTitle.textContent = titles[view] || "Content";
     showStatus("");
   }
 
@@ -196,7 +252,11 @@
 
   function renderNavigation() {
     const items = profile.role === "admin"
-      ? [{ view: "content", label: "Website content" }, { view: "news", label: "New News item" }]
+      ? [
+        { view: "members", label: "Members" },
+        { view: "news", label: "News" },
+        { view: "content", label: "Website content" },
+      ]
       : [];
     if (profile.member_id) items.push({ view: "profile", label: "My profile" });
 
@@ -206,7 +266,17 @@
       button.className = `nav-button${index === 0 ? " active" : ""}`;
       button.dataset.view = item.view;
       button.textContent = item.label;
-      button.addEventListener("click", () => showView(item.view));
+      button.addEventListener("click", () => {
+        showView(item.view);
+        // Each list is fetched on first visit rather than at sign-in.
+        if (item.view === "news") {
+          showNewsList();
+          loadNews();
+        }
+        if (item.view === "content" && !currentResource && resources.length) {
+          loadResource(elements.resourceSelect.value || resources[0].id);
+        }
+      });
       return button;
     }));
   }
@@ -284,6 +354,476 @@
     }
   }
 
+  let membersSha = "";
+  let fieldSeq = 0;
+
+  function slugify(value) {
+    return String(value || "").toLowerCase().normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  }
+
+  function labelled(text, control, wide) {
+    const wrap = document.createElement("div");
+    if (wide) wrap.className = "form-wide";
+    const label = document.createElement("label");
+    control.id = `mf-${fieldSeq += 1}`;
+    label.setAttribute("for", control.id);
+    label.textContent = text;
+    wrap.append(label, control);
+    return wrap;
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("파일을 읽지 못했습니다."));
+      reader.onload = () => resolve(String(reader.result).split(",")[1]);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Shared by the photo and CV pickers: hold the button busy, run the upload, report the result.
+  async function withUpload(button, busyMessage, run) {
+    button.classList.add("is-busy");
+    showStatus(busyMessage);
+    try {
+      showStatus(await run(), "success");
+    } catch (error) {
+      showStatus(error.message, "error");
+    } finally {
+      button.classList.remove("is-busy");
+    }
+  }
+
+  // Redraw the photo to the 600x600 JPEG every other member photo already uses, so a 5 MB
+  // phone picture becomes ~50 KB and the filename/format convention cannot drift.
+  function resizeToJpeg(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("사진을 읽지 못했습니다."));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("이미지 형식을 인식하지 못했습니다."));
+        image.onload = () => {
+          const side = Math.min(image.width, image.height);
+          const canvas = document.createElement("canvas");
+          canvas.width = PHOTO_SIZE;
+          canvas.height = PHOTO_SIZE;
+          const context = canvas.getContext("2d");
+          context.fillStyle = "#ffffff";
+          context.fillRect(0, 0, PHOTO_SIZE, PHOTO_SIZE);
+          // Square crop from the top centre, matching object-position: center top on the site.
+          context.drawImage(image, (image.width - side) / 2, 0, side, side, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
+          resolve(canvas.toDataURL("image/jpeg", 0.88));
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function buildMemberCard(section, member, isNew) {
+    const card = document.createElement("article");
+    card.className = "member-edit-card";
+    card.dataset.section = section.key;
+
+    const photo = document.createElement("div");
+    photo.className = "member-edit-photo";
+    const preview = document.createElement("img");
+    preview.alt = "";
+    preview.className = "member-edit-preview";
+    if (member.image) preview.src = member.image;
+    else preview.hidden = true;
+    const empty = document.createElement("div");
+    empty.className = "member-edit-nophoto";
+    empty.textContent = "사진 없음";
+    empty.hidden = Boolean(member.image);
+
+    const pickLabel = document.createElement("label");
+    pickLabel.className = "button button-secondary member-edit-pick";
+    pickLabel.textContent = "사진 올리기";
+    const pick = document.createElement("input");
+    pick.type = "file";
+    pick.accept = "image/*";
+    pick.hidden = true;
+    pickLabel.append(pick);
+    photo.append(preview, empty, pickLabel);
+
+    const hiddenImage = document.createElement("input");
+    hiddenImage.type = "hidden";
+    hiddenImage.dataset.field = "image";
+    hiddenImage.value = member.image || "";
+    card.append(hiddenImage);
+
+    const fields = document.createElement("div");
+    fields.className = "member-edit-fields";
+
+    const id = document.createElement("input");
+    id.type = "text";
+    id.dataset.field = "id";
+    id.value = member.id || "";
+    id.readOnly = !isNew;
+    if (isNew) id.placeholder = `${section.prefix}-hong-gildong`;
+    fields.append(labelled("Member id", id));
+
+    MEMBER_TEXT_FIELDS.forEach((spec) => {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.dataset.field = spec.name;
+      input.value = member[spec.name] || "";
+      if (spec.placeholder) input.placeholder = spec.placeholder;
+      if (spec.required) input.required = true;
+      fields.append(labelled(spec.required ? `${spec.label} *` : spec.label, input));
+    });
+
+    const affiliation = document.createElement("input");
+    affiliation.type = "text";
+    affiliation.dataset.field = "affiliation";
+    affiliation.value = member.affiliation || "";
+    fields.append(labelled("Affiliation", affiliation, true));
+
+    // CV: upload a PDF straight into assets/pdf, or paste an external address.
+    const cv = document.createElement("input");
+    cv.type = "text";
+    cv.dataset.field = "cv";
+    cv.value = member.cv || "";
+    cv.placeholder = "/assets/pdf/name_cv.pdf";
+    const cvRow = document.createElement("div");
+    cvRow.className = "form-wide member-edit-cv";
+    const cvPickLabel = document.createElement("label");
+    cvPickLabel.className = "button button-secondary member-edit-pick";
+    cvPickLabel.textContent = "PDF 올리기";
+    const cvPick = document.createElement("input");
+    cvPick.type = "file";
+    cvPick.accept = "application/pdf,.pdf";
+    cvPick.hidden = true;
+    cvPickLabel.append(cvPick);
+    cvRow.append(labelled("CV (PDF 업로드 또는 주소 입력)", cv), cvPickLabel);
+    fields.append(cvRow);
+
+    [["education", "Education"], ["research_areas", "Research areas"]].forEach(([name, label]) => {
+      const area = document.createElement("textarea");
+      area.rows = 3;
+      area.dataset.field = name;
+      area.value = (member[name] || []).join("\n");
+      fields.append(labelled(`${label} (한 줄에 하나)`, area, true));
+    });
+
+    // Auto-fill the id for a new member from the English name, but leave it editable.
+    if (isNew) {
+      const nameInput = fields.querySelector('[data-field="name_en"]');
+      nameInput.addEventListener("input", () => {
+        if (id.dataset.touched === "true") return;
+        const slug = slugify(nameInput.value);
+        id.value = slug ? `${section.prefix}-${slug}` : "";
+      });
+      id.addEventListener("input", () => { id.dataset.touched = "true"; });
+    }
+
+    // A file is written under a name derived from the member id, so the id has to exist first.
+    const chosenFile = (input) => {
+      const file = input.files && input.files[0];
+      input.value = "";
+      if (!file) return null;
+      if (!id.value.trim()) {
+        showStatus("파일을 올리기 전에 Member id를 먼저 정해 주세요.", "error");
+        return null;
+      }
+      return file;
+    };
+
+    pick.addEventListener("change", () => {
+      const file = chosenFile(pick);
+      if (!file) return;
+      withUpload(pickLabel, "사진을 올리는 중입니다…", async () => {
+        const dataUrl = await resizeToJpeg(file);
+        const data = await invoke({
+          action: "admin.members.image",
+          member_id: id.value.trim(),
+          content_base64: dataUrl.split(",")[1],
+        });
+        hiddenImage.value = data.image;
+        preview.src = dataUrl;
+        preview.hidden = false;
+        empty.hidden = true;
+        return "사진을 올렸습니다. 아래 Save를 눌러야 프로필에 연결됩니다.";
+      });
+    });
+
+    cvPick.addEventListener("change", () => {
+      const file = chosenFile(cvPick);
+      if (!file) return;
+      withUpload(cvPickLabel, "CV를 올리는 중입니다…", async () => {
+        const data = await invoke({
+          action: "admin.members.cv",
+          member_id: id.value.trim(),
+          content_base64: await fileToBase64(file),
+        });
+        cv.value = data.cv;
+        return "CV를 올렸습니다. 아래 Save를 눌러야 프로필에 연결됩니다.";
+      });
+    });
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "text-button member-edit-remove";
+    remove.textContent = "이 멤버 삭제";
+    remove.addEventListener("click", () => {
+      const who = fields.querySelector('[data-field="name_en"]').value || member.id;
+      if (window.confirm(`${who} 항목을 삭제할까요? 저장하면 홈페이지에서 사라집니다.`)) card.remove();
+    });
+
+    const side = document.createElement("div");
+    side.className = "member-edit-side";
+    side.append(photo, remove);
+    card.append(side, fields);
+    return card;
+  }
+
+  function renderMembers(sections) {
+    elements.membersSections.replaceChildren(...MEMBER_SECTIONS.map((section) => {
+      const block = document.createElement("section");
+      block.className = "member-section";
+      block.dataset.section = section.key;
+
+      const head = document.createElement("div");
+      head.className = "member-section-head";
+      const title = document.createElement("h3");
+      title.textContent = section.label;
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "button button-secondary";
+      add.textContent = "+ 멤버 추가";
+      head.append(title, add);
+
+      const list = document.createElement("div");
+      list.className = "member-cards";
+      (sections[section.key] || []).forEach((member) => {
+        list.append(buildMemberCard(section, member, false));
+      });
+
+      add.addEventListener("click", () => {
+        list.append(buildMemberCard(section, { education: [], research_areas: [] }, true));
+        list.lastElementChild.scrollIntoView({ block: "center" });
+      });
+
+      block.append(head, list);
+      return block;
+    }));
+  }
+
+  function collectMembers() {
+    const sections = {};
+    MEMBER_SECTIONS.forEach((section) => {
+      const block = elements.membersSections.querySelector(`[data-section="${section.key}"]`);
+      sections[section.key] = Array.from(block.querySelectorAll(".member-edit-card")).map((card) => {
+        const value = (name) => {
+          const node = card.querySelector(`[data-field="${name}"]`);
+          return node ? node.value.trim() : "";
+        };
+        const lines = (name) =>
+          value(name).split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
+        return {
+          id: value("id"),
+          name_en: value("name_en"),
+          name_ko: value("name_ko"),
+          role: value("role"),
+          email: value("email"),
+          github: value("github"),
+          cv: value("cv"),
+          image: value("image"),
+          affiliation: value("affiliation"),
+          education: lines("education"),
+          research_areas: lines("research_areas"),
+        };
+      });
+    });
+    return sections;
+  }
+
+  async function loadMembers() {
+    elements.membersSections.textContent = "Loading…";
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.members.read" });
+      membersSha = data.sha;
+      elements.membersSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      renderMembers(data.sections || {});
+    } catch (error) {
+      elements.membersSections.textContent = "";
+      showStatus(error.message, "error");
+    }
+  }
+
+  async function saveMembers() {
+    const sections = collectMembers();
+    const missing = Object.values(sections).flat().find((m) => !m.id || !m.name_en || !m.role);
+    if (missing) {
+      showStatus("Member id, English name, Role은 모두 채워야 합니다.", "error");
+      return;
+    }
+    setBusy(elements.membersSave, true, "Saving…");
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.members.save", sha: membersSha, sections });
+      membersSha = data.sha;
+      elements.membersSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      const parts = [];
+      if (data.added) parts.push(`추가 ${data.added}명`);
+      if (data.removed) parts.push(`삭제 ${data.removed}명`);
+      showStatus(
+        `저장했습니다${parts.length ? ` (${parts.join(", ")})` : ""}. 배포가 끝나면 Members 페이지에 반영됩니다.`,
+        "success",
+      );
+      await loadMembers();
+    } catch (error) {
+      showStatus(
+        error.status === 409
+          ? "members.yml이 다른 곳에서 먼저 수정되었습니다. Reload 후 다시 시도해 주세요."
+          : error.message,
+        "error",
+      );
+    } finally {
+      setBusy(elements.membersSave, false);
+    }
+  }
+
+  elements.membersSave.addEventListener("click", saveMembers);
+  elements.membersReload.addEventListener("click", loadMembers);
+
+  // ── News: list -> edit form ────────────────────────────────────────────────
+  let newsEditing = null;
+
+  function showNewsList() {
+    elements.newsListView.hidden = false;
+    elements.newsEditView.hidden = true;
+    newsEditing = null;
+    showStatus("");
+  }
+
+  function newsRow(item) {
+    const row = document.createElement("div");
+    row.className = "cms-list-row";
+
+    const main = document.createElement("div");
+    main.className = "cms-list-main";
+    const title = document.createElement("div");
+    title.className = "cms-list-title";
+    title.textContent = item.slug.replace(/-/g, " ");
+    const meta = document.createElement("div");
+    meta.className = "cms-list-meta";
+    const date = document.createElement("span");
+    date.className = "cms-badge";
+    date.textContent = item.date || "-";
+    const file = document.createElement("code");
+    file.textContent = item.name;
+    meta.append(date, file);
+    main.append(title, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "cms-list-actions";
+    const edit = document.createElement("button");
+    edit.type = "button";
+    edit.className = "button button-secondary";
+    edit.textContent = "Edit";
+    edit.addEventListener("click", () => openNews(item));
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "button button-danger";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", () => removeNews(item, remove));
+    actions.append(edit, remove);
+
+    row.append(main, actions);
+    return row;
+  }
+
+  async function loadNews() {
+    elements.newsCount.textContent = "불러오는 중…";
+    elements.newsItems.replaceChildren();
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.news.list" });
+      const items = data.items || [];
+      elements.newsCount.textContent = `${items.length}개 항목`;
+      elements.newsItems.replaceChildren(...items.map(newsRow));
+      if (!items.length) elements.newsItems.textContent = "News가 없습니다.";
+    } catch (error) {
+      elements.newsCount.textContent = "";
+      showStatus(error.message, "error");
+    }
+  }
+
+  async function openNews(item) {
+    showStatus("불러오는 중…");
+    try {
+      const data = await invoke({ action: "admin.news.item", resource_id: item.id });
+      newsEditing = { id: item.id, sha: data.sha };
+      elements.newsEditTitle.textContent = item.slug.replace(/-/g, " ");
+      elements.newsEditPath.textContent = data.path;
+      elements.newsEditSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      elements.newsEditDate.value = data.date;
+      elements.newsEditDisplay.value = data.display_date;
+      elements.newsEditBody.value = data.body;
+      elements.newsListView.hidden = true;
+      elements.newsEditView.hidden = false;
+      showStatus("");
+    } catch (error) {
+      showStatus(error.message, "error");
+    }
+  }
+
+  async function saveNews() {
+    if (!newsEditing) return;
+    setBusy(elements.newsEditSave, true, "Saving…");
+    showStatus("");
+    try {
+      const data = await invoke({
+        action: "admin.news.update",
+        resource_id: newsEditing.id,
+        sha: newsEditing.sha,
+        display_date: elements.newsEditDisplay.value,
+        body: elements.newsEditBody.value,
+      });
+      newsEditing.sha = data.sha;
+      elements.newsEditSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      showStatus("저장했습니다. 배포가 끝나면 홈페이지에 반영됩니다.", "success");
+    } catch (error) {
+      showStatus(
+        error.status === 409
+          ? "이 News가 다른 곳에서 먼저 수정되었습니다. 목록으로 돌아가 다시 열어 주세요."
+          : error.message,
+        "error",
+      );
+    } finally {
+      setBusy(elements.newsEditSave, false);
+    }
+  }
+
+  async function removeNews(item, button) {
+    if (!window.confirm(`${item.name} 을(를) 삭제할까요? 홈페이지에서 사라집니다.`)) return;
+    setBusy(button, true, "Deleting…");
+    try {
+      await invoke({ action: "admin.news.remove", resource_id: item.id });
+      showStatus("삭제했습니다. 배포가 끝나면 홈페이지에서 사라집니다.", "success");
+      resources = resources.filter((resource) => resource.id !== item.id);
+      renderResourceOptions();
+      await loadNews();
+    } catch (error) {
+      showStatus(error.message, "error");
+      setBusy(button, false);
+    }
+  }
+
+  elements.newsReload.addEventListener("click", loadNews);
+  elements.newsEditSave.addEventListener("click", saveNews);
+  elements.newsEditBack.addEventListener("click", showNewsList);
+  elements.newsNew.addEventListener("click", () => showView("newsNew"));
+  elements.newsCreateBack.addEventListener("click", () => {
+    showView("news");
+    loadNews();
+  });
+
   async function enterApp() {
     try {
       const data = await invoke({ action: "me" });
@@ -297,8 +837,8 @@
 
       if (profile.role === "admin") {
         renderResourceOptions();
-        showView("content");
-        if (resources.length) await loadResource(resources[0].id);
+        showView("members");
+        await loadMembers();
       } else if (profile.member_id) {
         showView("profile");
       } else {
@@ -466,9 +1006,9 @@
       elements.newsForm.reset();
       resources.push(data.resource);
       renderResourceOptions();
-      elements.resourceSelect.value = data.resource.id;
-      showView("content");
-      await loadResource(data.resource.id);
+      showView("news");
+      showNewsList();
+      await loadNews();
       showStatus(demoMode
         ? "데모 News를 만들었습니다. 이 브라우저에서만 확인할 수 있습니다."
         : "새 News를 만들었습니다. 배포 후 홈페이지에 표시됩니다.", "success");

@@ -208,3 +208,209 @@ textarea { line-height: 1.55; resize: vertical; }
   .login-card { padding: 28px 22px; }
   .account-menu #account-name { flex-basis: 100%; }
 }
+
+/* ── Structured members editor ─────────────────────────────────────────────── */
+
+.member-section {
+  margin-bottom: 2rem;
+}
+
+.member-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--cms-border, #e8eaf0);
+}
+
+.member-section-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.member-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.member-edit-card {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.1rem;
+  border: 1px solid var(--cms-border, #e8eaf0);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.member-edit-side {
+  flex: 0 0 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.member-edit-photo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.member-edit-preview,
+.member-edit-nophoto {
+  width: 150px;
+  height: 188px;
+  border-radius: 8px;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.member-edit-nophoto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f2f6;
+  color: #8b8fa3;
+  font-size: 0.8rem;
+}
+
+.member-edit-pick {
+  text-align: center;
+  cursor: pointer;
+}
+
+.member-edit-pick.is-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.member-edit-remove {
+  color: #b3261e;
+}
+
+.member-edit-fields {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.member-edit-fields .form-wide {
+  grid-column: 1 / -1;
+}
+
+.member-edit-fields input[readonly] {
+  background: #f5f6fa;
+  color: #6b7080;
+}
+
+.members-note {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.85rem;
+  color: #6b7080;
+}
+
+@media (max-width: 760px) {
+  .member-edit-card {
+    flex-direction: column;
+  }
+
+  .member-edit-side {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .member-edit-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.member-edit-cv {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.member-edit-cv > div:first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-edit-cv .member-edit-pick {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* ── Generic content list (News, and later Publications / Gallery) ─────────── */
+
+.panel-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cms-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cms-border, #e8eaf0);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.cms-list-main {
+  min-width: 0;
+}
+
+.cms-list-title {
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.cms-list-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+  color: #6b7080;
+}
+
+.cms-badge {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #eef0ff;
+  color: #2d3a8c;
+  font-variant-numeric: tabular-nums;
+}
+
+.cms-list-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.button-danger {
+  background: #b3261e;
+  border-color: #b3261e;
+  color: #fff;
+}
+
+@media (max-width: 620px) {
+  .cms-list-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
