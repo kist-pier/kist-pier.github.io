@@ -137,6 +137,27 @@ sitemap: false
           </div>
         </section>
 
+        <section id="data-editor" class="panel" hidden>
+          <div class="panel-heading">
+            <div>
+              <h2 id="data-title">Data</h2>
+              <p id="data-count">불러오는 중…</p>
+            </div>
+            <div class="panel-actions">
+              <button id="data-reload" class="button button-secondary" type="button">Reload</button>
+              <button id="data-add" class="button button-primary" type="button">+ 항목 추가</button>
+            </div>
+          </div>
+          <div class="editor-meta">
+            <code id="data-path"></code>
+            <span id="data-sha"></span>
+          </div>
+          <div id="data-items" class="member-cards"></div>
+          <div class="form-actions">
+            <button id="data-save" class="button button-primary" type="button">Save &amp; publish</button>
+          </div>
+        </section>
+
         <section id="pubs-manager" class="panel" hidden>
           <div id="pubs-list-view">
             <div class="panel-heading">

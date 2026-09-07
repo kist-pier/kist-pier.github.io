@@ -517,3 +517,11 @@ textarea { line-height: 1.55; resize: vertical; }
   font-size: 0.78rem;
   color: #6b7080;
 }
+
+.data-edit-card .member-edit-side {
+  flex: 0 0 150px;
+}
+
+.data-edit-card .member-edit-side:empty {
+  display: none;
+}

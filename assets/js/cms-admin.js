@@ -98,7 +98,22 @@
     pubsBibtex: document.getElementById("pubs-bibtex"),
     pubsFill: document.getElementById("pubs-fill"),
     pubsEditSave: document.getElementById("pubs-edit-save"),
+    dataEditor: document.getElementById("data-editor"),
+    dataTitle: document.getElementById("data-title"),
+    dataCount: document.getElementById("data-count"),
+    dataPath: document.getElementById("data-path"),
+    dataSha: document.getElementById("data-sha"),
+    dataItems: document.getElementById("data-items"),
+    dataReload: document.getElementById("data-reload"),
+    dataAdd: document.getElementById("data-add"),
+    dataSave: document.getElementById("data-save"),
   };
+
+  const DATA_COLLECTIONS = [
+    { id: "equipment", label: "Lab equipment" },
+    { id: "facilities", label: "Facilities" },
+    { id: "positions", label: "Open positions" },
+  ];
 
   const PUB_TYPES = ["article", "inproceedings", "incollection", "phdthesis", "misc"];
   const PUB_FIELDS = [
@@ -184,6 +199,10 @@
       };
     }
 
+    if (body.action === "admin.data.read") {
+      return { sha: demoRevision(), collection: body.collection, label: "Demo", path: "-", uploads: false, fields: [], items: [] };
+    }
+
     if (body.action === "admin.pubs.read") {
       return { sha: demoRevision(), editable: [], entries: [] };
     }
@@ -259,6 +278,7 @@
       members: elements.membersEditor,
       gallery: elements.galleryEditor,
       pubs: elements.pubsManager,
+      data: elements.dataEditor,
       news: elements.newsManager,
       newsNew: elements.newsCreator,
       content: elements.adminEditor,
@@ -270,12 +290,15 @@
     document.querySelectorAll(".nav-button").forEach((button) => {
       // "New item" has no nav entry of its own; it stays under News.
       const owner = view === "newsNew" ? "news" : view;
-      button.classList.toggle("active", button.dataset.view === owner);
+      const matches = button.dataset.view === owner &&
+        (!button.dataset.collection || button.dataset.collection === dataState.collection);
+      button.classList.toggle("active", matches);
     });
     const titles = {
       members: "Members",
       gallery: "Gallery",
       pubs: "Publications",
+      data: "Data",
       news: "News",
       newsNew: "New News",
       profile: "My Profile",
@@ -316,6 +339,11 @@
         { view: "news", label: "News" },
         { view: "gallery", label: "Gallery" },
         { view: "pubs", label: "Publications" },
+        ...DATA_COLLECTIONS.map((entry) => ({
+          view: "data",
+          collection: entry.id,
+          label: entry.label,
+        })),
         { view: "content", label: "Website content" },
       ]
       : [];
@@ -326,6 +354,7 @@
       button.type = "button";
       button.className = `nav-button${index === 0 ? " active" : ""}`;
       button.dataset.view = item.view;
+      if (item.collection) button.dataset.collection = item.collection;
       button.textContent = item.label;
       button.addEventListener("click", () => {
         showView(item.view);
@@ -338,6 +367,9 @@
         if (item.view === "pubs") {
           showPubsList();
           if (!pubsSha) loadPubs();
+        }
+        if (item.view === "data" && item.collection !== dataState.collection) {
+          loadData(item.collection);
         }
         if (item.view === "content" && !currentResource && resources.length) {
           loadResource(elements.resourceSelect.value || resources[0].id);
@@ -781,6 +813,205 @@
 
   elements.membersSave.addEventListener("click", saveMembers);
   elements.membersReload.addEventListener("click", loadMembers);
+
+  // ── Generic _data collections (equipment, facilities, positions) ───────────
+  // Everything here is driven by the field schema the server sends, so a new collection
+  // needs no browser code — only an entry in the server's table.
+  let dataState = { collection: "", sha: "", fields: [], uploads: false };
+
+  function dataCard(item) {
+    const card = document.createElement("article");
+    card.className = "member-edit-card data-edit-card";
+    const fields = document.createElement("div");
+    fields.className = "member-edit-fields";
+
+    let nameInput = null;
+    let imageInput = null;
+    let preview = null;
+
+    dataState.fields.forEach((spec) => {
+      if (spec.kind === "image") {
+        imageInput = document.createElement("input");
+        imageInput.type = "hidden";
+        imageInput.dataset.field = spec.name;
+        imageInput.value = item[spec.name] || "";
+        card.append(imageInput);
+        return;
+      }
+      let control;
+      if (spec.kind === "bool") {
+        control = document.createElement("input");
+        control.type = "checkbox";
+        control.checked = item[spec.name] === true;
+      } else if (spec.kind === "list") {
+        control = document.createElement("textarea");
+        control.rows = 4;
+        control.value = (item[spec.name] || []).join("\n");
+      } else {
+        control = document.createElement("input");
+        control.type = "text";
+        control.value = item[spec.name] || "";
+        if (spec.required) control.required = true;
+      }
+      control.dataset.field = spec.name;
+      const label = spec.kind === "list" ? `${spec.label} (한 줄에 하나)` : spec.label;
+      const wrap = labelled(spec.required ? `${label} *` : label, control, spec.wide);
+      if (spec.kind === "bool") wrap.classList.add("pubs-check");
+      fields.append(wrap);
+      if (!nameInput && spec.required) nameInput = control;
+    });
+
+    const side = document.createElement("div");
+    side.className = "member-edit-side";
+    if (dataState.uploads) {
+      preview = document.createElement("img");
+      preview.className = "member-edit-preview";
+      preview.alt = "";
+      if (imageInput && imageInput.value) preview.src = imageInput.value;
+      else preview.hidden = true;
+      const empty = document.createElement("div");
+      empty.className = "member-edit-nophoto";
+      empty.textContent = "사진 없음";
+      empty.hidden = Boolean(imageInput && imageInput.value);
+      const pickLabel = document.createElement("label");
+      pickLabel.className = "button button-secondary member-edit-pick";
+      pickLabel.textContent = "사진 올리기";
+      const pick = document.createElement("input");
+      pick.type = "file";
+      pick.accept = "image/*";
+      pick.hidden = true;
+      pickLabel.append(pick);
+      pick.addEventListener("change", () => {
+        const file = pick.files && pick.files[0];
+        pick.value = "";
+        if (!file) return;
+        const name = nameInput ? nameInput.value.trim() : "";
+        if (!name) {
+          showStatus("사진을 올리기 전에 이름을 먼저 입력해 주세요.", "error");
+          return;
+        }
+        withUpload(pickLabel, "사진을 올리는 중입니다…", async () => {
+          const dataUrl = await resizeToJpegMax(file, 1200, 0.88);
+          const saved = await invoke({
+            action: "admin.data.image",
+            collection: dataState.collection,
+            name,
+            content_base64: dataUrl.split(",")[1],
+          });
+          imageInput.value = saved.image;
+          preview.src = dataUrl;
+          preview.hidden = false;
+          empty.hidden = true;
+          return "사진을 올렸습니다. 아래 Save를 눌러야 연결됩니다.";
+        });
+      });
+      side.append(preview, empty, pickLabel);
+    }
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "text-button member-edit-remove";
+    remove.textContent = "이 항목 삭제";
+    remove.addEventListener("click", () => {
+      const who = nameInput ? nameInput.value : "이 항목";
+      if (window.confirm(`${who} 을(를) 삭제할까요?`)) {
+        card.remove();
+        elements.dataCount.textContent =
+          `${elements.dataItems.querySelectorAll(".data-edit-card").length}개`;
+      }
+    });
+    side.append(remove);
+
+    card.append(side, fields);
+    return card;
+  }
+
+  function renderData(items) {
+    elements.dataItems.replaceChildren(...items.map(dataCard));
+    elements.dataCount.textContent = `${items.length}개`;
+  }
+
+  async function loadData(collection) {
+    elements.dataItems.replaceChildren();
+    elements.dataCount.textContent = "불러오는 중…";
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.data.read", collection });
+      dataState = {
+        collection,
+        sha: data.sha,
+        fields: data.fields || [],
+        uploads: Boolean(data.uploads),
+      };
+      elements.dataTitle.textContent = data.label;
+      elements.dataPath.textContent = data.path;
+      elements.dataSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      renderData(data.items || []);
+    } catch (error) {
+      elements.dataCount.textContent = "";
+      showStatus(error.message, "error");
+    }
+  }
+
+  function collectData() {
+    return Array.from(elements.dataItems.querySelectorAll(".data-edit-card")).map((card) => {
+      const item = {};
+      dataState.fields.forEach((spec) => {
+        const node = card.querySelector(`[data-field="${spec.name}"]`);
+        if (!node) return;
+        if (spec.kind === "bool") item[spec.name] = node.checked;
+        else if (spec.kind === "list") {
+          item[spec.name] = node.value.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+        } else item[spec.name] = node.value.trim();
+      });
+      return item;
+    });
+  }
+
+  async function saveData() {
+    const items = collectData();
+    const required = dataState.fields.filter((spec) => spec.required).map((spec) => spec.name);
+    if (items.some((item) => required.some((name) => !item[name]))) {
+      showStatus("필수 항목을 모두 채워 주세요.", "error");
+      return;
+    }
+    setBusy(elements.dataSave, true, "Saving…");
+    showStatus("");
+    try {
+      const saved = await invoke({
+        action: "admin.data.save",
+        collection: dataState.collection,
+        sha: dataState.sha,
+        items,
+      });
+      dataState.sha = saved.sha;
+      elements.dataSha.textContent = `revision ${saved.sha.slice(0, 8)}`;
+      renderData(saved.items || items);
+      showStatus("저장했습니다. 배포가 끝나면 홈페이지에 반영됩니다.", "success");
+    } catch (error) {
+      showStatus(
+        error.status === 409
+          ? "다른 곳에서 먼저 수정되었습니다. Reload 후 다시 시도해 주세요."
+          : error.message,
+        "error",
+      );
+    } finally {
+      setBusy(elements.dataSave, false);
+    }
+  }
+
+  elements.dataReload.addEventListener("click", () => loadData(dataState.collection));
+  elements.dataSave.addEventListener("click", saveData);
+  elements.dataAdd.addEventListener("click", () => {
+    const blank = {};
+    dataState.fields.forEach((spec) => {
+      blank[spec.name] = spec.kind === "list" ? [] : spec.kind === "bool" ? true : "";
+    });
+    elements.dataItems.append(dataCard(blank));
+    elements.dataItems.lastElementChild.scrollIntoView({ block: "center" });
+    elements.dataCount.textContent =
+      `${elements.dataItems.querySelectorAll(".data-edit-card").length}개`;
+  });
 
   // ── Publications ───────────────────────────────────────────────────────────
   let pubsSha = "";

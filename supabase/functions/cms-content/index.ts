@@ -1015,6 +1015,205 @@ async function existingFileSha(path: string): Promise<string | undefined> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Generic editor for the simple _data collections. Each one is a list of records with
+// the same shape, so a schema is enough: the reader, the writer and the browser form
+// are all driven from this table.
+// ---------------------------------------------------------------------------
+
+type DataFieldKind = "text" | "list" | "bool" | "image";
+type DataField = {
+  name: string;
+  kind: DataFieldKind;
+  label: string;
+  required?: boolean;
+  quoted?: boolean;
+  wide?: boolean;
+};
+type DataCollection = {
+  path: string;
+  root: string;
+  label: string;
+  imageDir?: string;
+  fields: DataField[];
+};
+
+// Unlike members.yml these files have no folded block scalar, and they do hold long one-line
+// strings, so they are written without wrapping — which reproduces them exactly.
+const DATA_YAML_OUTPUT = { lineWidth: 0 };
+
+const DATA_COLLECTIONS: Record<string, DataCollection> = {
+  equipment: {
+    path: "_data/equipment.yml",
+    root: "equipment",
+    label: "Lab equipment",
+    imageDir: "assets/img/lab-equipment",
+    fields: [
+      {
+        name: "name",
+        kind: "text",
+        label: "Name",
+        required: true,
+        quoted: true,
+      },
+      { name: "image", kind: "image", label: "Photo" },
+      {
+        name: "description",
+        kind: "text",
+        label: "Description",
+        quoted: true,
+        wide: true,
+      },
+    ],
+  },
+  facilities: {
+    path: "_data/facilities.yml",
+    root: "facilities",
+    label: "Facilities",
+    imageDir: "assets/img/lab-equipment",
+    fields: [
+      {
+        name: "name",
+        kind: "text",
+        label: "Name",
+        required: true,
+        quoted: true,
+      },
+      { name: "badge", kind: "text", label: "Badge", quoted: true },
+      { name: "image", kind: "image", label: "Photo" },
+      {
+        name: "description",
+        kind: "text",
+        label: "Description",
+        quoted: true,
+        wide: true,
+      },
+      { name: "specs", kind: "list", label: "Specs", quoted: true, wide: true },
+    ],
+  },
+  positions: {
+    path: "_data/positions.yml",
+    root: "positions",
+    label: "Open positions",
+    fields: [
+      {
+        name: "title",
+        kind: "text",
+        label: "Title",
+        required: true,
+        quoted: true,
+      },
+      {
+        name: "description",
+        kind: "text",
+        label: "Description",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "requirements",
+        kind: "list",
+        label: "Requirements",
+        quoted: true,
+        wide: true,
+      },
+      { name: "open", kind: "bool", label: "Currently open" },
+    ],
+  },
+};
+
+function resolveCollection(value: unknown): [string, DataCollection] {
+  const id = typeof value === "string" ? value : "";
+  const collection = DATA_COLLECTIONS[id];
+  if (!collection) throw new HttpError(400, "알 수 없는 콘텐츠 종류입니다.");
+  return [id, collection];
+}
+
+function readDataRecord(
+  row: Record<string, unknown>,
+  collection: DataCollection,
+): Record<string, unknown> {
+  const record: Record<string, unknown> = {};
+  for (const field of collection.fields) {
+    const raw = row[field.name];
+    if (field.kind === "list") {
+      record[field.name] = Array.isArray(raw)
+        ? raw.map((item) => String(item))
+        : [];
+    } else if (field.kind === "bool") {
+      record[field.name] = raw === true;
+    } else {
+      record[field.name] = typeof raw === "string" ? raw : "";
+    }
+  }
+  return record;
+}
+
+function normalizeDataRecord(
+  value: unknown,
+  collection: DataCollection,
+): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new HttpError(400, "항목 데이터가 올바르지 않습니다.");
+  }
+  const input = value as Record<string, unknown>;
+  const record: Record<string, unknown> = {};
+  for (const field of collection.fields) {
+    if (field.kind === "list") {
+      const raw = input[field.name] ?? [];
+      if (!Array.isArray(raw) || raw.length > 40) {
+        throw new HttpError(400, `${field.label} 목록이 올바르지 않습니다.`);
+      }
+      record[field.name] = raw.map((item) =>
+        safePlainText(item, field.label, 400)
+      )
+        .filter(Boolean);
+    } else if (field.kind === "bool") {
+      record[field.name] = input[field.name] === true;
+    } else if (field.kind === "image") {
+      const raw = safePlainText(input[field.name] ?? "", field.label, 200);
+      if (raw && !/^\/assets\/img\/[a-z0-9_/-]+\.(jpg|png)$/.test(raw)) {
+        throw new HttpError(400, "사진 경로가 올바르지 않습니다.");
+      }
+      record[field.name] = raw;
+    } else {
+      record[field.name] = safePlainText(
+        input[field.name] ?? "",
+        field.label,
+        1500,
+      );
+    }
+    if (field.required && !record[field.name]) {
+      throw new HttpError(400, `${field.label}은(는) 비워둘 수 없습니다.`);
+    }
+  }
+  return record;
+}
+
+// Empty optional values are dropped rather than written as "", which Liquid treats as truthy.
+function dataNode(
+  record: Record<string, unknown>,
+  collection: DataCollection,
+): Record<string, unknown> {
+  const node: Record<string, unknown> = {};
+  for (const field of collection.fields) {
+    const value = record[field.name];
+    if (field.kind === "list") {
+      const items = value as string[];
+      if (items.length) {
+        node[field.name] = field.quoted ? items.map(yamlQuoted) : items;
+      }
+    } else if (field.kind === "bool") {
+      node[field.name] = value === true;
+    } else if (value) {
+      node[field.name] = field.quoted
+        ? yamlQuoted(value as string)
+        : (value as string);
+    }
+  }
+  return node;
+}
+
 function requireAdmin(profile: CmsProfile): void {
   if (profile.role !== "admin") {
     throw new HttpError(403, "관리자 권한이 필요합니다.");
@@ -1350,6 +1549,108 @@ async function handleAction(
     return isCv
       ? { ...saved, cv: `/${path}` }
       : { ...saved, image: `/${path}` };
+  }
+
+  if (action === "admin.data.read") {
+    requireAdmin(profile);
+    const [id, collection] = resolveCollection(body.collection);
+    const file = await readGitHubFile(collection.path);
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error(`${collection.path} could not be parsed`);
+    }
+    const data = document.toJS() as Record<string, unknown>;
+    const rows = Array.isArray(data[collection.root])
+      ? data[collection.root] as Array<Record<string, unknown>>
+      : [];
+    return {
+      sha: file.sha,
+      collection: id,
+      label: collection.label,
+      path: collection.path,
+      uploads: Boolean(collection.imageDir),
+      fields: collection.fields,
+      items: rows.map((row) => readDataRecord(row, collection)),
+    };
+  }
+
+  if (action === "admin.data.save") {
+    requireAdmin(profile);
+    const [, collection] = resolveCollection(body.collection);
+    if (typeof body.sha !== "string") {
+      throw new HttpError(400, "revision이 없습니다.");
+    }
+    const rows = body.items;
+    if (!Array.isArray(rows) || rows.length > 200) {
+      throw new HttpError(400, "항목 목록이 올바르지 않습니다.");
+    }
+    const items = rows.map((row) => normalizeDataRecord(row, collection));
+
+    const file = await readGitHubFile(collection.path);
+    if (file.sha !== body.sha) {
+      throw new HttpError(
+        409,
+        `${collection.label}이(가) 다른 곳에서 먼저 수정되었습니다.`,
+      );
+    }
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error(`${collection.path} could not be parsed`);
+    }
+    // The list is rebuilt so entries can be reordered, so the heading comment and the blank
+    // line between entries are re-attached by hand.
+    const previous = document.getIn([collection.root], true) as
+      | { commentBefore?: string }
+      | undefined;
+    const commentBefore = previous && typeof previous === "object"
+      ? previous.commentBefore
+      : undefined;
+    const sequence = document.createNode(
+      items.map((item) => dataNode(item, collection)),
+    ) as { commentBefore?: string; items?: Array<{ spaceBefore?: boolean }> };
+    if (commentBefore !== undefined) sequence.commentBefore = commentBefore;
+    (sequence.items ?? []).forEach((item, index) => {
+      if (index > 0) item.spaceBefore = true;
+    });
+    document.set(collection.root, sequence);
+
+    const saved = await saveGitHubFile(
+      collection.path,
+      document.toString(DATA_YAML_OUTPUT),
+      `cms: update ${collection.label.toLowerCase()}`,
+      file.sha,
+    );
+    await audit(profile, "admin.data.save", collection.path, saved.commit_sha, {
+      total: items.length,
+    });
+    return { ...saved, items };
+  }
+
+  if (action === "admin.data.image") {
+    requireAdmin(profile);
+    const [, collection] = resolveCollection(body.collection);
+    if (!collection.imageDir) {
+      throw new HttpError(400, "이 항목은 사진을 올릴 수 없습니다.");
+    }
+    const slug = safePlainText(body.name ?? "", "Name", 200)
+      .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
+      .slice(0, 60) || "item";
+    const { base64, bytes } = decodeUpload(
+      body.content_base64,
+      MAX_GALLERY_IMAGE_BYTES,
+    );
+    if (!hasSignature(bytes, [0xff, 0xd8, 0xff])) {
+      throw new HttpError(400, "JPEG 이미지만 올릴 수 있습니다.");
+    }
+    const path = `${collection.imageDir}/${slug}.jpg`;
+    const saved = await putGitHubFile(
+      path,
+      base64,
+      `cms: update ${collection.label.toLowerCase()} photo ${slug}`,
+      await existingFileSha(path),
+    );
+    await audit(profile, "admin.data.image", path, saved.commit_sha);
+    return { ...saved, image: `/${path}` };
   }
 
   if (action === "admin.pubs.read") {
