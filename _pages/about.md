@@ -7,7 +7,7 @@ description: "PIER Lab at KIST — research on physical intelligence and embodie
 announcements:
   enabled: true
   scrollable: true
-  limit: 5
+  limit: 6
 selected_papers: true
 social: false
 ---
