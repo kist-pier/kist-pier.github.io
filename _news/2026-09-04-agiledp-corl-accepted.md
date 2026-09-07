@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Paper "AgileDP: Quantizing Diffusion Policy via Dynamic Scaling and Reweighted Distillation" by Jiyeon Joung, Seungseop Lee, Namyoon Kim, and Keunwoo Jang has been accepted at **CoRL 2026**!
+Paper "AgileDP: Quantizing Diffusion Policy via Dynamic Scaling and Reweighted Distillation" accepted at **CoRL 2026**!

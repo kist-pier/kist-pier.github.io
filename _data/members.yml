@@ -106,6 +106,18 @@ research_interns:
       - "Dynamic Locomotion"
     email: "kptro@kist.re.kr"
 
+  - id: "intern-jiyeon-joung"
+    name_en: "Jiyeon Joung"
+    name_ko: "정지연"
+    role: "Intern Researcher"
+    education:
+      - "B.S. Department of Software, Sungkyunkwan University"
+    research_areas:
+      - "Imitation Learning"
+      - "Quantization"
+      - "Reinforcement Learning"
+    email: "0926187@kist.re.kr"
+
 undergrad:
   - id: "undergrad-wonseok-choi"
     name_en: "Wonseok Choi"
@@ -133,7 +145,7 @@ alumni:
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
       next: "M.S. at PIER Lab, KIST (Yonsei University)"
 
-    - name_en: "Jiyeon Jeong"
+    - name_en: "Jiyeon Joung"
       period: "2025.07 ~ 2026.03"
       affiliation: "Department of Software, Sungkyunkwan University"
       next: "Intern at Kim Jaechul Graduate School of AI, KAIST"
@@ -179,10 +191,11 @@ alumni:
       affiliation: "Department of Mechanical Engineering, KAIST"
       next: ""
 
-    - name_en: "Dogeun Kim"
+    - name_en: "Dogun Kim"
       period: "2025.07 ~ 2025.12"
       affiliation: "Department of Artificial Intelligence, University of Seoul"
       next: "M.S. at Cho Chun Shik Graduate School of Mobility, KAIST"
+      linkedin: "https://www.linkedin.com/in/dogun-kim-092bb7345/"
 
     - name_en: "Namyoon Kim"
       period: "2025.03 ~ 2025.12"
@@ -194,7 +207,7 @@ alumni:
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
       next: "M.S. at PIER Lab, KIST (Yonsei University)"
 
-    - name_en: "Jiyeon Jeong"
+    - name_en: "Jiyeon Joung"
       period: "2024.12 ~ 2025.06"
       affiliation: "Department of Software, Sungkyunkwan University"
       next: ""

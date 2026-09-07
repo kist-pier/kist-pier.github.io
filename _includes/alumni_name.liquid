@@ -1,0 +1,6 @@
+{% assign person = include.person %}
+{% if person.linkedin %}
+  <a href="{{ person.linkedin | escape }}" target="_blank" rel="noopener noreferrer">{{ person.name_en | escape }}</a>
+{% else %}
+  {{ person.name_en | escape }}
+{% endif %}

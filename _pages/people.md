@@ -159,7 +159,7 @@ nav: false
     <tbody>
       {% for person in members.alumni.intern_alumni %}
       <tr>
-        <td>{{ person.name_en | escape }}</td>
+        <td>{% include alumni_name.liquid person=person %}</td>
         <td>{{ person.period | escape }}</td>
         <td>{{ person.affiliation | escape }}</td>
         <td>{% if person.next and person.next != "" %}{{ person.next | escape }}{% else %}—{% endif %}</td>
@@ -184,7 +184,7 @@ nav: false
     <tbody>
       {% for person in members.alumni.undergrad_alumni %}
       <tr>
-        <td>{{ person.name_en | escape }}</td>
+        <td>{% include alumni_name.liquid person=person %}</td>
         <td>{{ person.period | escape }}</td>
         <td>{{ person.affiliation | escape }}</td>
         <td>{% if person.next and person.next != "" %}{{ person.next | escape }}{% else %}—{% endif %}</td>

@@ -1,13 +1,12 @@
 # All venue badges are unified to lab primary blue (#2d3a8c)
 # The CSS in _custom.scss forces abbr.badge { background: #2d3a8c !important }
 # These color values are kept for reference / fallback only.
-# `preview` images are sourced from each venue/publisher's official website.
+# Journal previews use `preview`. Conference previews are keyed by publication
+# year so an older paper never inherits the current conference logo.
 
 "RA-L":
   url: https://www.ieee-ras.org/publications/ieee-robotics-and-automation-letters/
   color: "#2d3a8c"
-  preview: "https://www.ieee-ras.org/wp-content/uploads/2025/05/ras_logo.jpg"
-  preview_alt: "IEEE Robotics and Automation Society logo"
 
 "T-RO":
   url: https://www.ieee.org/publications/rights/index.html
@@ -22,26 +21,34 @@
 "IROS":
   url: https://www.ieee-ras.org/conferences-workshops/financially-co-sponsored/iros/
   color: "#2d3a8c"
-  preview: "https://images.weserv.nl/?url=https://www.iros25.org/templates/iros2025/static/images/logo.png"
-  preview_alt: "IROS 2025 Hangzhou logo"
+  previews:
+    "2025":
+      src: "/assets/img/publication_preview/iros-2025.svg"
+      alt: "IROS 2025 Hangzhou logo"
 
 "ICRA-W":
   url: https://www.ieee-ras.org/conferences-workshops/fully-sponsored/icra/
   color: "#2d3a8c"
-  preview: "https://www.ieee-ras.org/wp-content/uploads/2025/05/ras_logo.jpg"
-  preview_alt: "IEEE Robotics and Automation Society logo"
+  previews:
+    "2024":
+      src: "/assets/img/publication_preview/icra-2024.svg"
+      alt: "ICRA 2024 Yokohama logo"
+      url: https://2024.ieee-icra.org/
 
 "ICARM":
   url: https://www.ieee-arm.org/
   color: "#2d3a8c"
-  preview: "https://www.ieee-arm.org/icarm2025/wp-content/uploads/2024/10/arm-1-300x99.png"
-  preview_alt: "IEEE ARM conference logo"
+  previews:
+    "2019":
+      src: "/assets/img/publication_preview/icarm-2019.svg"
+      alt: "IEEE ICARM 2019 Osaka logo"
+      url: https://www.ieee-arm.org/icarm2019/
 
 "T-Mech":
   url: https://ieeexplore.ieee.org/xpl/RecentIssue.jsp?punumber=3516
   color: "#2d3a8c"
-  preview: "https://www.ieee-ras.org/wp-content/uploads/2025/05/ras_logo.jpg"
-  preview_alt: "IEEE Robotics and Automation Society logo"
+  preview: "/assets/img/publication_preview/tmech.svg"
+  preview_alt: "IEEE/ASME Transactions on Mechatronics logo"
 
 "IJSR":
   url: https://link.springer.com/journal/12369
@@ -64,8 +71,8 @@
 "JKROS":
   url: https://journal.kros.org/
   color: "#2d3a8c"
-  preview: "https://kros.org/images/main/logo.gif?2"
-  preview_alt: "Korea Robotics Society logo"
+  preview: "/assets/img/publication_preview/jkros.svg"
+  preview_alt: "The Journal of Korea Robotics Society logo"
 
 "KSME":
   color: "#2d3a8c"
@@ -73,8 +80,11 @@
 "KROC":
   url: https://kros.org/
   color: "#2d3a8c"
-  preview: "https://kros.org/images/main/logo.gif?2"
-  preview_alt: "Korea Robotics Society logo"
+  previews:
+    "2021":
+      src: "/assets/img/publication_preview/kros.svg"
+      alt: "Korea Robotics Society logo for KRoC 2021"
+      url: https://kros.org/Conference/ConferenceView.asp?AC=0&CODE=CC20201102&CpPage=73
 
 "arXiv":
   url: https://arxiv.org/
@@ -91,8 +101,12 @@
 "CoRL":
   url: https://2026.corl.org/
   color: "#2d3a8c"
-  preview: "https://lh3.googleusercontent.com/sitesv/AG8ngQU3zOcn5yWwe-uhssHIPyP2b9ZN8rLz22E9dvNOu1skGnZ4sPl6VgpU9BEVF37-APgicVy2SV0ehzyi8sqRS_qvccdQIAqXCH_6Y0a-vDbQCAZ9FCUvsyO0Qnae58jghkHdefQEgSZMbWzsRBmRVpVPJVjhRcd2klTW1WAx3p2kBKacVznRjnQkJT0D8LY=w1280"
-  preview_alt: "CoRL 2026 logo"
+  # Keep a local copy because Google Sites asset URLs can expire or change.
+  previews:
+    "2026":
+      src: "/assets/img/publication_preview/corl-2026.svg"
+      alt: "CoRL 2026 logo"
+      url: https://2026.corl.org/
 
 "RSS":
   color: "#2d3a8c"

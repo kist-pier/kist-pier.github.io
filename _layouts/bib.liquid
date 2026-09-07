@@ -3,6 +3,18 @@
 <div class="row">
   {% if site.enable_publication_thumbnails %}
     {% assign venue = site.data.venues[entry.abbr] %}
+    {% assign venue_url = venue.url %}
+    {% assign venue_preview = venue.preview %}
+    {% assign venue_preview_alt = venue.preview_alt %}
+    {% assign entry_year_key = entry.year | append: '' %}
+    {% if venue.previews and venue.previews[entry_year_key] %}
+      {% assign dated_venue = venue.previews[entry_year_key] %}
+      {% assign venue_preview = dated_venue.src %}
+      {% assign venue_preview_alt = dated_venue.alt %}
+      {% if dated_venue.url %}
+        {% assign venue_url = dated_venue.url %}
+      {% endif %}
+    {% endif %}
     <div class="col col-sm-2 abbr">
       {%- if entry.abbr -%}
         {%- if venue -%}
@@ -16,8 +28,8 @@
               {{ venue_style }}
             {% endif -%}
           >
-            {% if venue.url %}
-              <a href="{{ venue.url }}">{{ entry.abbr }}</a>
+            {% if venue_url %}
+              <a href="{{ venue_url }}">{{ entry.abbr }}</a>
             {% else %}
               <div>{{- entry.abbr -}}</div>
             {% endif %}
@@ -42,13 +54,13 @@
             alt=entry.preview
           %}
         {% endif %}
-      {% elsif venue.preview %}
+      {% elsif venue_preview %}
         <div class="venue-preview-card">
           <span class="venue-preview-fallback" aria-hidden="true">{{ entry.abbr }}</span>
           <img
             class="venue-preview-image"
-            src="{{ venue.preview }}"
-            alt="{{ venue.preview_alt | default: entry.abbr | escape }}"
+            src="{{ venue_preview }}"
+            alt="{{ venue_preview_alt | default: entry.abbr | escape }}"
             loading="lazy"
             referrerpolicy="no-referrer"
             onerror="this.style.display='none'"
@@ -219,6 +231,11 @@
       {% endif %}
       {% if entry.arxiv %}
         <a href="http://arxiv.org/abs/{{ entry.arxiv }}" class="btn btn-sm z-depth-0" role="button">arXiv</a>
+      {% endif %}
+      {% if entry.url %}
+        <a href="{{ entry.url }}" class="btn btn-sm z-depth-0" role="button">
+          {%- if entry.url contains 'openreview.net' -%}OpenReview{%- else -%}URL{%- endif -%}
+        </a>
       {% endif %}
       {% if entry.hal %}
         <a href="https://hal.science/{{ entry.hal }}" class="btn btn-sm z-depth-0" role="button">HAL</a>
