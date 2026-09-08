@@ -50,6 +50,11 @@ nav: false
             <i class="fa-solid fa-globe"></i> Website
           </a>
         {% endif %}
+        {% if pi.cv and pi.cv != "" %}
+          <a href="{{ pi.cv | relative_url | escape }}" target="_blank" rel="noopener" class="advisor-link-btn">
+            <i class="fa-solid fa-file-lines"></i> CV
+          </a>
+        {% endif %}
       </div>
     </div>
   </div>

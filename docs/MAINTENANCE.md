@@ -154,16 +154,18 @@ delete from public.cms_profiles where lower(email) = lower('나간사람_이메�
 
 `https://pier-lab.kr/admin/` 로그인 후 왼쪽 메뉴:
 
-| 메뉴 | 하는 일 |
-|---|---|
-| **Members** | 학생 카드별 편집, 추가/삭제, **사진 업로드**, **CV(PDF) 업로드** |
-| **Advisor (PI)** | 지도교수 페이지 — 사진, 링크 4개(Email·Scholar·GitHub·Website), 소개글, 학력, 경력, 수상 |
-| **News** | 목록 → 편집/삭제, 새 글 작성 |
-| **Gallery** | 사진 여러 장 한 번에 업로드, 캡션·분류·날짜 편집 |
-| **Publications** | 목록 → 편집/삭제, **BibTeX 붙여넣기로 자동 채우기** |
-| **Lab equipment / Facilities / Open positions** | 항목별 편집, 추가/삭제, 사진 업로드 |
-| **Alumni (interns / undergrad)** | 졸업생 명단 — 이름, 기간, 소속, 이직처, LinkedIn |
-| **Website content** | 위에서 안 되는 것들의 원본(YAML/Markdown) 직접 편집 |
+| 메뉴 | 탭 | 하는 일 |
+|---|---|---|
+| **Members** | Students | 학생 카드별 편집, 추가/삭제, **사진 업로드**, **CV(PDF) 업로드** |
+| | Advisor (PI) | 지도교수 페이지 — 사진, 링크(Email·Scholar·GitHub·Website·CV), 소개글, 학력, 경력, 수상 |
+| | Alumni (interns / undergrad) | 졸업생 명단 — 이름, 기간, 소속, 이직처, LinkedIn |
+| **News** | | 목록 → 편집/삭제, 새 글 작성 |
+| **Gallery** | | 사진 여러 장 한 번에 업로드, 캡션·분류·날짜 편집 |
+| **Publications** | | 목록 → 편집/삭제, **BibTeX 붙여넣기로 자동 채우기** |
+| **Lab info** | Lab equipment / Facilities / Open positions | 항목별 편집, 추가/삭제, 사진 업로드 |
+| **Website content** | | 위에서 안 되는 것들의 원본(YAML/Markdown) 직접 편집 |
+
+사이드바는 6개 그룹이고, 여러 화면이 있는 그룹은 위쪽 **탭**으로 나뉩니다.
 
 ### 자동으로 되는 것들 (신경 안 써도 됨)
 

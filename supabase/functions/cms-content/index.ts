@@ -1708,6 +1708,7 @@ async function handleAction(
         ...Object.fromEntries(PI_TEXT_FIELDS.map((name) => [name, text(name)])),
         ...Object.fromEntries(PI_LINK_FIELDS.map((name) => [name, text(name)])),
         image: text("image"),
+        cv: text("cv"),
         bio: text("bio"),
         research_interests: list("research_interests"),
         awards: list("awards"),
@@ -1741,6 +1742,7 @@ async function handleAction(
       values[name] = safeUrl(input[name] ?? "", name);
     }
     values.image = safeMemberImage(input.image);
+    values.cv = safeCv(input.cv ?? "");
     const bio = safePlainText(input.bio ?? "", "Bio", 4000);
     const interests = normalizeMemberList(
       input.research_interests,

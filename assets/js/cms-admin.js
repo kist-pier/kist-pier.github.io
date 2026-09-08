@@ -112,7 +112,28 @@
     piSha: document.getElementById("pi-sha"),
     piSave: document.getElementById("pi-save"),
     piReload: document.getElementById("pi-reload"),
+    tabs: document.getElementById("cms-tabs"),
   };
+
+  // The sidebar lists groups; a group with more than one screen shows them as tabs, so the
+  // eleven editors stay reachable without eleven sidebar entries.
+  const NAV_GROUPS = [
+    { label: "Members", tabs: [
+      { key: "members", label: "Students" },
+      { key: "pi", label: "Advisor (PI)" },
+      { key: "alumni_intern", label: "Alumni (interns)", collection: "alumni_intern" },
+      { key: "alumni_undergrad", label: "Alumni (undergrad)", collection: "alumni_undergrad" },
+    ] },
+    { label: "News", tabs: [{ key: "news", label: "News" }] },
+    { label: "Gallery", tabs: [{ key: "gallery", label: "Gallery" }] },
+    { label: "Publications", tabs: [{ key: "pubs", label: "Publications" }] },
+    { label: "Lab info", tabs: [
+      { key: "equipment", label: "Lab equipment", collection: "equipment" },
+      { key: "facilities", label: "Facilities", collection: "facilities" },
+      { key: "positions", label: "Open positions", collection: "positions" },
+    ] },
+    { label: "Website content", tabs: [{ key: "content", label: "Website content" }] },
+  ];
 
   // The four link buttons the advisor page renders, in the order they appear there.
   const PI_LINKS = [
@@ -128,13 +149,6 @@
       { key: "period", label: "기간" }, { key: "title", label: "직위" }, { key: "institution", label: "소속" }] },
   ];
 
-  const DATA_COLLECTIONS = [
-    { id: "equipment", label: "Lab equipment" },
-    { id: "facilities", label: "Facilities" },
-    { id: "positions", label: "Open positions" },
-    { id: "alumni_intern", label: "Alumni (interns)" },
-    { id: "alumni_undergrad", label: "Alumni (undergrad)" },
-  ];
 
   const PUB_TYPES = ["article", "inproceedings", "incollection", "phdthesis", "misc"];
   const PUB_FIELDS = [
@@ -298,41 +312,93 @@
     elements.globalStatus.hidden = !message;
   }
 
-  function showView(view) {
-    const views = {
+  function panelFor(key) {
+    const panels = {
       members: elements.membersEditor,
       pi: elements.piEditor,
       gallery: elements.galleryEditor,
       pubs: elements.pubsManager,
-      data: elements.dataEditor,
       news: elements.newsManager,
       newsNew: elements.newsCreator,
       content: elements.adminEditor,
       profile: elements.memberEditor,
     };
-    Object.entries(views).forEach(([name, node]) => {
-      node.hidden = name !== view;
-    });
+    // Anything else is a _data collection, which all share one panel.
+    return panels[key] || elements.dataEditor;
+  }
+
+  function allTabs() {
+    return NAV_GROUPS.flatMap((group) => group.tabs);
+  }
+
+  function groupFor(key) {
+    // "New item" has no tab of its own; it belongs to News.
+    const owner = key === "newsNew" ? "news" : key;
+    return NAV_GROUPS.find((group) => group.tabs.some((tab) => tab.key === owner));
+  }
+
+  function renderTabs(key) {
+    const group = groupFor(key);
+    if (!group || group.tabs.length < 2) {
+      elements.tabs.replaceChildren();
+      elements.tabs.hidden = true;
+      return;
+    }
+    elements.tabs.hidden = false;
+    elements.tabs.replaceChildren(...group.tabs.map((tab) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `cms-tab${tab.key === key ? " active" : ""}`;
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-selected", tab.key === key ? "true" : "false");
+      button.textContent = tab.label;
+      button.addEventListener("click", () => activate(tab.key));
+      return button;
+    }));
+  }
+
+  function showView(view) {
+    const target = panelFor(view);
+    [
+      elements.membersEditor, elements.piEditor, elements.galleryEditor,
+      elements.pubsManager, elements.newsManager, elements.newsCreator,
+      elements.adminEditor, elements.memberEditor, elements.dataEditor,
+    ].forEach((node) => { node.hidden = node !== target; });
+
+    const group = groupFor(view);
     document.querySelectorAll(".nav-button").forEach((button) => {
-      // "New item" has no nav entry of its own; it stays under News.
-      const owner = view === "newsNew" ? "news" : view;
-      const matches = button.dataset.view === owner &&
-        (!button.dataset.collection || button.dataset.collection === dataState.collection);
-      button.classList.toggle("active", matches);
+      button.classList.toggle("active", Boolean(group) && button.dataset.group === group.label);
     });
-    const titles = {
-      members: "Members",
-      pi: "Advisor (PI)",
-      gallery: "Gallery",
-      pubs: "Publications",
-      data: "Data",
-      news: "News",
-      newsNew: "New News",
-      profile: "My Profile",
-      content: "Content",
-    };
-    elements.workspaceTitle.textContent = titles[view] || "Content";
+    renderTabs(view);
+
+    const tab = allTabs().find((entry) => entry.key === view);
+    const titles = { newsNew: "New News", profile: "My Profile" };
+    elements.workspaceTitle.textContent =
+      titles[view] || (tab ? tab.label : "Content");
     showStatus("");
+  }
+
+  // Each screen fetches its data on first visit rather than at sign-in.
+  function activate(key) {
+    showView(key);
+    const tab = allTabs().find((entry) => entry.key === key);
+    if (key === "members") {
+      if (!membersSha) loadMembers();
+    } else if (key === "pi") {
+      if (!piSha) loadPi();
+    } else if (key === "news") {
+      showNewsList();
+      loadNews();
+    } else if (key === "gallery") {
+      if (!gallerySha) loadGallery();
+    } else if (key === "pubs") {
+      showPubsList();
+      if (!pubsSha) loadPubs();
+    } else if (tab && tab.collection) {
+      if (dataState.collection !== tab.collection) loadData(tab.collection);
+    } else if (key === "content" && !currentResource && resources.length) {
+      loadResource(elements.resourceSelect.value || resources[0].id);
+    }
   }
 
   async function invoke(body) {
@@ -360,52 +426,26 @@
   }
 
   function renderNavigation() {
-    const items = profile.role === "admin"
-      ? [
-        { view: "members", label: "Members" },
-        { view: "pi", label: "Advisor (PI)" },
-        { view: "news", label: "News" },
-        { view: "gallery", label: "Gallery" },
-        { view: "pubs", label: "Publications" },
-        ...DATA_COLLECTIONS.map((entry) => ({
-          view: "data",
-          collection: entry.id,
-          label: entry.label,
-        })),
-        { view: "content", label: "Website content" },
-      ]
-      : [];
-    if (profile.member_id) items.push({ view: "profile", label: "My profile" });
-
-    elements.navigation.replaceChildren(...items.map((item, index) => {
+    const groups = profile.role === "admin" ? NAV_GROUPS : [];
+    const buttons = groups.map((group, index) => {
       const button = document.createElement("button");
       button.type = "button";
       button.className = `nav-button${index === 0 ? " active" : ""}`;
-      button.dataset.view = item.view;
-      if (item.collection) button.dataset.collection = item.collection;
-      button.textContent = item.label;
-      button.addEventListener("click", () => {
-        showView(item.view);
-        // Each list is fetched on first visit rather than at sign-in.
-        if (item.view === "news") {
-          showNewsList();
-          loadNews();
-        }
-        if (item.view === "pi" && !piSha) loadPi();
-        if (item.view === "gallery" && !gallerySha) loadGallery();
-        if (item.view === "pubs") {
-          showPubsList();
-          if (!pubsSha) loadPubs();
-        }
-        if (item.view === "data" && item.collection !== dataState.collection) {
-          loadData(item.collection);
-        }
-        if (item.view === "content" && !currentResource && resources.length) {
-          loadResource(elements.resourceSelect.value || resources[0].id);
-        }
-      });
+      button.dataset.group = group.label;
+      button.textContent = group.label;
+      button.addEventListener("click", () => activate(group.tabs[0].key));
       return button;
-    }));
+    });
+    if (profile.member_id) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "nav-button";
+      button.dataset.group = "My profile";
+      button.textContent = "My profile";
+      button.addEventListener("click", () => showView("profile"));
+      buttons.push(button);
+    }
+    elements.navigation.replaceChildren(...buttons);
   }
 
   function renderResourceOptions() {
@@ -943,8 +983,8 @@
     basics.block.replaceChildren(basics.block.firstChild, basicsRow);
     parts.push(basics.block);
 
-    // The four link buttons
-    const links = piSection("링크 (페이지의 버튼 4개)");
+    // The link buttons the advisor page renders
+    const links = piSection("링크 (페이지의 버튼)");
     PI_LINKS.forEach((spec) => {
       const input = document.createElement("input");
       input.type = "text";
@@ -953,6 +993,39 @@
       input.placeholder = spec.placeholder;
       links.grid.append(labelled(spec.label, input));
     });
+
+    // CV: upload a PDF straight into assets/pdf, or paste an address.
+    const cv = document.createElement("input");
+    cv.type = "text";
+    cv.dataset.field = "cv";
+    cv.value = pi.cv || "";
+    cv.placeholder = "/assets/pdf/name_cv.pdf";
+    const cvRow = document.createElement("div");
+    cvRow.className = "form-wide member-edit-cv";
+    const cvPickLabel = document.createElement("label");
+    cvPickLabel.className = "button button-secondary member-edit-pick";
+    cvPickLabel.textContent = "PDF 올리기";
+    const cvPick = document.createElement("input");
+    cvPick.type = "file";
+    cvPick.accept = "application/pdf,.pdf";
+    cvPick.hidden = true;
+    cvPickLabel.append(cvPick);
+    cvPick.addEventListener("change", () => {
+      const file = cvPick.files && cvPick.files[0];
+      cvPick.value = "";
+      if (!file) return;
+      withUpload(cvPickLabel, "CV를 올리는 중입니다…", async () => {
+        const saved = await invoke({
+          action: "admin.members.cv",
+          member_id: piMemberId,
+          content_base64: await fileToBase64(file),
+        });
+        cv.value = saved.cv;
+        return "CV를 올렸습니다. 아래 Save를 눌러야 반영됩니다.";
+      });
+    });
+    cvRow.append(labelled("CV (PDF 업로드 또는 주소 입력)", cv), cvPickLabel);
+    links.grid.append(cvRow);
     parts.push(links.block);
 
     // Bio and interests
@@ -1011,6 +1084,7 @@
       value(name).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
     const pi = {
       image: value("image"),
+      cv: value("cv"),
       bio: value("bio"),
       research_interests: lines("research_interests"),
       awards: lines("awards"),
@@ -1785,10 +1859,7 @@
   elements.newsEditSave.addEventListener("click", saveNews);
   elements.newsEditBack.addEventListener("click", showNewsList);
   elements.newsNew.addEventListener("click", () => showView("newsNew"));
-  elements.newsCreateBack.addEventListener("click", () => {
-    showView("news");
-    loadNews();
-  });
+  elements.newsCreateBack.addEventListener("click", () => activate("news"));
 
   async function enterApp() {
     try {
@@ -1805,6 +1876,7 @@
         renderResourceOptions();
         showView("members");
         await loadMembers();
+        renderTabs("members");
       } else if (profile.member_id) {
         showView("profile");
       } else {

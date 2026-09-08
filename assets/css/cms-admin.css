@@ -578,3 +578,33 @@ textarea { line-height: 1.55; resize: vertical; }
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ── Group tabs ────────────────────────────────────────────────────────────── */
+
+.cms-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--cms-border, #e8eaf0);
+}
+
+.cms-tab {
+  padding: 0.55rem 0.9rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #6b7080;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cms-tab:hover {
+  color: #2d3a8c;
+}
+
+.cms-tab.active {
+  color: #2d3a8c;
+  border-bottom-color: #2d3a8c;
+}
