@@ -1,6 +1,5 @@
 facilities:
   - name: "Living Room Data Collection Studio"
-    badge: "Upcoming"
     image: /assets/img/lab-equipment/living_room_studio.jpg
     description: "Home-environment replica space for in-domain robot learning and behavior cloning data collection in daily-life manipulation scenarios."
 
