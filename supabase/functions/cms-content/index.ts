@@ -1218,6 +1218,48 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
       },
     ],
   },
+  research_projects: {
+    path: "_data/research_projects.yml",
+    root: ["projects"],
+    label: "Research projects",
+    fields: [
+      {
+        name: "video",
+        kind: "text",
+        label: "YouTube 영상 ID (주소가 아니라 ID 11자)",
+        required: true,
+        quoted: true,
+      },
+      {
+        name: "heading",
+        kind: "text",
+        label: "제목",
+        required: true,
+        quoted: true,
+      },
+      {
+        name: "area",
+        kind: "text",
+        label: "분류 배지 (예: Whole-Body Control)",
+        quoted: true,
+      },
+      {
+        name: "description",
+        kind: "text",
+        label: "설명",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "title",
+        kind: "text",
+        label: "영상 대체 텍스트 (화면에 안 보임)",
+        quoted: true,
+        wide: true,
+      },
+      { name: "tags", kind: "list", label: "태그", quoted: true, wide: true },
+    ],
+  },
   alumni_intern: {
     path: "_data/members.yml",
     root: ["alumni", "intern_alumni"],

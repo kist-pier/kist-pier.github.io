@@ -1,0 +1,103 @@
+projects:
+  # Rendered on the Research Areas page under Featured Demonstrations.
+
+  - video: "Ne1Hq8tVIxE"
+    title: "AgileDP: quantizing diffusion policy (CoRL 2026)"
+    area: "Visuomotor Policy · CoRL 2026"
+    heading: "AgileDP — Quantizing Diffusion Policy"
+    description: "The demonstration for our CoRL 2026 paper, which quantizes diffusion policies through dynamic scaling and reweighted distillation."
+    tags:
+      - "diffusion policy"
+      - "quantization"
+      - "CoRL 2026"
+
+  - video: "lQ_y--EV3I8"
+    title: "IGRIS-C bimanual manipulation with ACT"
+    area: "Visuomotor Policy"
+    heading: "IGRIS-C Bimanual Manipulation"
+    description: "ACT-based imitation learning driving bimanual manipulation on our IGRIS-C platform."
+    tags:
+      - "ACT"
+      - "imitation learning"
+      - "bimanual manipulation"
+      - "IGRIS-C"
+
+  - video: "7SihLREjGUU"
+    title: "FR3 door opening and object placement with ACT"
+    area: "Visuomotor Policy"
+    heading: "FR3 Door Opening and Object Placement"
+    description: "An ACT-based Franka FR3 manipulation demonstration combining door opening with object placement."
+    tags:
+      - "ACT"
+      - "manipulation"
+      - "contact-rich task"
+
+  - video: "1UGTUN5sOFA"
+    title: "Latent-action flow-matching VLA mug-tree manipulation"
+    area: "Visuomotor Policy · Shorts"
+    heading: "Latent-Action VLA"
+    description: "A short demonstration of hanging a cup on a mug tree using a latent-action-space flow-matching VLA."
+    tags:
+      - "VLA"
+      - "flow matching"
+      - "latent action"
+
+  - video: "cqwowtTqkh0"
+    title: "Hand-over manipulation running on Jetson Orin"
+    area: "Visuomotor Policy"
+    heading: "On-Device Policy Inference"
+    description: "Running a learned manipulation policy within the compute and memory budget of embedded hardware — a hand-over task inferring on an NVIDIA Jetson Orin."
+    tags:
+      - "on-board inference"
+      - "Jetson Orin"
+      - "hand-over"
+
+  - video: "Ul8FCtOhl58"
+    title: "G1 stair walking with reinforcement learning"
+    area: "Whole-Body Control"
+    heading: "G1 Stair Walking with Reinforcement Learning"
+    description: "An RL-based locomotion demonstration of the Unitree G1 humanoid walking on stairs."
+    tags:
+      - "reinforcement learning"
+      - "humanoid"
+      - "locomotion"
+
+  - video: "mH7Cl8D0gdQ"
+    title: "G1 whole-body teleoperation with RL and PICO"
+    area: "Whole-Body Control"
+    heading: "G1 Whole-Body Teleoperation"
+    description: "A whole-body teleoperation demonstration for the Unitree G1 using reinforcement learning and PICO."
+    tags:
+      - "teleoperation"
+      - "reinforcement learning"
+      - "PICO"
+
+  - video: "kM8krLXtw8c"
+    title: "Self-collision avoidance in whole-body control with MPPI"
+    area: "Whole-Body Control"
+    heading: "Self-Collision Avoidance in Whole-Body Control"
+    description: "Keeping a high-degree-of-freedom robot clear of self-collision while it tracks its task objectives, here with an MPPI formulation."
+    tags:
+      - "MPPI"
+      - "self-collision avoidance"
+      - "whole-body control"
+
+  - video: "W1N5YrBhMac"
+    title: "Indoor navigation on the Unitree G1 with MPPI"
+    area: "Whole-Body Control"
+    heading: "Indoor Navigation with MPPI"
+    description: "Model Predictive Path Integral control for indoor navigation, demonstrated on the Unitree G1 humanoid."
+    tags:
+      - "MPPI"
+      - "indoor navigation"
+      - "humanoid"
+
+  - video: "yFcK23lYpCs"
+    title: "Navigation with dynamic obstacle avoidance on the Unitree G1"
+    area: "Whole-Body Control"
+    heading: "Dynamic Obstacle Avoidance"
+    description: "Reliable avoidance of moving obstacles during navigation, building on our CSC-MPPI framework (IROS 2025)."
+    tags:
+      - "CSC-MPPI"
+      - "dynamic obstacles"
+      - "navigation"

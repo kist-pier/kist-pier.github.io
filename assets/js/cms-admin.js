@@ -129,8 +129,11 @@
     { label: "Publications", tabs: [{ key: "pubs", label: "Publications" }] },
     { label: "Lab info", tabs: [
       { key: "research_areas", label: "Research areas", collection: "research_areas" },
+      { key: "research_projects", label: "Research projects", collection: "research_projects" },
       { key: "equipment", label: "Lab equipment", collection: "equipment" },
       { key: "facilities", label: "Facilities", collection: "facilities" },
+    ] },
+    { label: "Contact", tabs: [
       { key: "positions", label: "Open positions", collection: "positions" },
     ] },
     { label: "Website content", tabs: [{ key: "content", label: "Website content" }] },

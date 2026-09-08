@@ -162,7 +162,8 @@ delete from public.cms_profiles where lower(email) = lower('나간사람_이메�
 | **News** | | 목록 → 편집/삭제, 새 글 작성 |
 | **Gallery** | | 사진 여러 장 한 번에 업로드, 캡션·분류·날짜 편집 |
 | **Publications** | | 목록 → 편집/삭제, **BibTeX 붙여넣기로 자동 채우기** |
-| **Lab info** | Lab equipment / Facilities / Open positions | 항목별 편집, 추가/삭제, 사진 업로드 |
+| **Lab info** | Research areas / Research projects / Lab equipment / Facilities | 연구 분야·프로젝트 영상·장비·시설 편집, 추가/삭제, 사진 업로드 |
+| **Contact** | | 채용 공고 — 내용, 지원 링크(Google 폼), 공개 여부 |
 | **Website content** | | 위에서 안 되는 것들의 원본(YAML/Markdown) 직접 편집 |
 
 사이드바는 6개 그룹이고, 여러 화면이 있는 그룹은 위쪽 **탭**으로 나뉩니다.
