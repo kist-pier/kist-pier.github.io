@@ -1067,7 +1067,7 @@ async function existingFileSha(path: string): Promise<string | undefined> {
 // are all driven from this table.
 // ---------------------------------------------------------------------------
 
-type DataFieldKind = "text" | "list" | "bool" | "image";
+type DataFieldKind = "text" | "list" | "bool" | "image" | "youtube";
 type DataField = {
   name: string;
   kind: DataFieldKind;
@@ -1225,8 +1225,8 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
     fields: [
       {
         name: "video",
-        kind: "text",
-        label: "YouTube 영상 ID (주소가 아니라 ID 11자)",
+        kind: "youtube",
+        label: "YouTube 주소 또는 영상 ID",
         required: true,
         quoted: true,
       },
@@ -1336,6 +1336,26 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
   },
 };
 
+// Accepts a watch link, a share link, a Shorts link, an embed link, or a bare id, and stores
+// the id — pasting the address from the browser is what people actually do.
+function safeYouTubeId(value: unknown, label: string): string {
+  const raw = safePlainText(value, label, 200);
+  if (!raw) return "";
+  const patterns = [
+    /(?:youtube\.com|youtube-nocookie\.com)\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/,
+    /youtu\.be\/([A-Za-z0-9_-]{11})/,
+    /^([A-Za-z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = raw.match(pattern);
+    if (match) return match[1];
+  }
+  throw new HttpError(
+    400,
+    `${label}에서 YouTube 영상 ID를 찾지 못했습니다. 영상 주소를 그대로 붙여넣거나 11자 ID를 입력해 주세요.`,
+  );
+}
+
 function resolveCollection(value: unknown): [string, DataCollection] {
   const id = typeof value === "string" ? value : "";
   const collection = DATA_COLLECTIONS[id];
@@ -1384,6 +1404,8 @@ function normalizeDataRecord(
         .filter(Boolean);
     } else if (field.kind === "bool") {
       record[field.name] = input[field.name] === true;
+    } else if (field.kind === "youtube") {
+      record[field.name] = safeYouTubeId(input[field.name], field.label);
     } else if (field.kind === "image") {
       const raw = safePlainText(input[field.name] ?? "", field.label, 200);
       if (raw && !/^\/assets\/img\/[a-z0-9_/-]+\.(jpg|png)$/.test(raw)) {
