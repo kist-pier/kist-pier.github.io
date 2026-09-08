@@ -132,6 +132,8 @@
     { id: "equipment", label: "Lab equipment" },
     { id: "facilities", label: "Facilities" },
     { id: "positions", label: "Open positions" },
+    { id: "alumni_intern", label: "Alumni (interns)" },
+    { id: "alumni_undergrad", label: "Alumni (undergrad)" },
   ];
 
   const PUB_TYPES = ["article", "inproceedings", "incollection", "phdthesis", "misc"];

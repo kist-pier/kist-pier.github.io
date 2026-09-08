@@ -1078,9 +1078,13 @@ type DataField = {
 };
 type DataCollection = {
   path: string;
-  root: string;
+  // Path to the list inside the file, so a nested one such as alumni.intern_alumni works too.
+  root: string[];
   label: string;
   imageDir?: string;
+  // members.yml holds a folded block scalar and must keep its wrapping; the standalone
+  // _data files hold long one-line strings and must not be wrapped at all.
+  output?: { lineWidth: number };
   fields: DataField[];
 };
 
@@ -1091,7 +1095,7 @@ const DATA_YAML_OUTPUT = { lineWidth: 0 };
 const DATA_COLLECTIONS: Record<string, DataCollection> = {
   equipment: {
     path: "_data/equipment.yml",
-    root: "equipment",
+    root: ["equipment"],
     label: "Lab equipment",
     imageDir: "assets/img/lab-equipment",
     fields: [
@@ -1114,7 +1118,7 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
   },
   facilities: {
     path: "_data/facilities.yml",
-    root: "facilities",
+    root: ["facilities"],
     label: "Facilities",
     imageDir: "assets/img/lab-equipment",
     fields: [
@@ -1139,7 +1143,7 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
   },
   positions: {
     path: "_data/positions.yml",
-    root: "positions",
+    root: ["positions"],
     label: "Open positions",
     fields: [
       {
@@ -1164,6 +1168,80 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
         wide: true,
       },
       { name: "open", kind: "bool", label: "Currently open" },
+    ],
+  },
+  alumni_intern: {
+    path: "_data/members.yml",
+    root: ["alumni", "intern_alumni"],
+    label: "Alumni (interns)",
+    output: YAML_OUTPUT,
+    fields: [
+      {
+        name: "name_en",
+        kind: "text",
+        label: "Name",
+        required: true,
+        quoted: true,
+      },
+      { name: "period", kind: "text", label: "Period", quoted: true },
+      {
+        name: "affiliation",
+        kind: "text",
+        label: "Affiliation",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "next",
+        kind: "text",
+        label: "Next position",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "linkedin",
+        kind: "text",
+        label: "LinkedIn URL",
+        quoted: true,
+        wide: true,
+      },
+    ],
+  },
+  alumni_undergrad: {
+    path: "_data/members.yml",
+    root: ["alumni", "undergrad_alumni"],
+    label: "Alumni (undergraduates)",
+    output: YAML_OUTPUT,
+    fields: [
+      {
+        name: "name_en",
+        kind: "text",
+        label: "Name",
+        required: true,
+        quoted: true,
+      },
+      { name: "period", kind: "text", label: "Period", quoted: true },
+      {
+        name: "affiliation",
+        kind: "text",
+        label: "Affiliation",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "next",
+        kind: "text",
+        label: "Next position",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "linkedin",
+        kind: "text",
+        label: "LinkedIn URL",
+        quoted: true,
+        wide: true,
+      },
     ],
   },
 };
@@ -1740,9 +1818,15 @@ async function handleAction(
     if (document.errors.length) {
       throw new Error(`${collection.path} could not be parsed`);
     }
-    const data = document.toJS() as Record<string, unknown>;
-    const rows = Array.isArray(data[collection.root])
-      ? data[collection.root] as Array<Record<string, unknown>>
+    const found = collection.root.reduce<unknown>(
+      (current, key) =>
+        current && typeof current === "object"
+          ? (current as Record<string, unknown>)[key]
+          : undefined,
+      document.toJS(),
+    );
+    const rows = Array.isArray(found)
+      ? found as Array<Record<string, unknown>>
       : [];
     return {
       sha: file.sha,
@@ -1780,7 +1864,7 @@ async function handleAction(
     }
     // The list is rebuilt so entries can be reordered, so the heading comment and the blank
     // line between entries are re-attached by hand.
-    const previous = document.getIn([collection.root], true) as
+    const previous = document.getIn(collection.root, true) as
       | { commentBefore?: string }
       | undefined;
     const commentBefore = previous && typeof previous === "object"
@@ -1793,11 +1877,11 @@ async function handleAction(
     (sequence.items ?? []).forEach((item, index) => {
       if (index > 0) item.spaceBefore = true;
     });
-    document.set(collection.root, sequence);
+    document.setIn(collection.root, sequence);
 
     const saved = await saveGitHubFile(
       collection.path,
-      document.toString(DATA_YAML_OUTPUT),
+      document.toString(collection.output ?? DATA_YAML_OUTPUT),
       `cms: update ${collection.label.toLowerCase()}`,
       file.sha,
     );
