@@ -1580,6 +1580,19 @@ async function handleAction(
     if (typeof body.content !== "string" || typeof body.sha !== "string") {
       throw new HttpError(400, "저장할 내용 또는 revision이 없습니다.");
     }
+    if (resource.path.endsWith(".yml")) {
+      const check = parseDocument(body.content);
+      if (check.errors.length) {
+        const first = check.errors[0];
+        const line = first.linePos ? first.linePos[0].line : 0;
+        throw new HttpError(
+          422,
+          `YAML 문법 오류라 저장하지 않았습니다${
+            line ? ` (${line}행)` : ""
+          }: ${first.message}`,
+        );
+      }
+    }
     const saved = await saveGitHubFile(
       resource.path,
       body.content,
@@ -1681,7 +1694,7 @@ async function handleAction(
         const member = normalizeAdminMember(row);
         const id = member.id as string;
         if (seenIds.has(id)) {
-          throw new HttpError(409, `중복된 member id입니다: ${id}`);
+          throw new HttpError(422, `중복된 member id입니다: ${id}`);
         }
         seenIds.add(id);
         return member;
@@ -2165,7 +2178,7 @@ async function handleAction(
     const seenKeys = new Set<string>();
     for (const entry of incoming) {
       if (seenKeys.has(entry.key)) {
-        throw new HttpError(409, `중복된 citation key입니다: ${entry.key}`);
+        throw new HttpError(422, `중복된 citation key입니다: ${entry.key}`);
       }
       seenKeys.add(entry.key);
     }
@@ -2287,7 +2300,7 @@ async function handleAction(
     const seenImages = new Set<string>();
     for (const photo of photos) {
       if (seenImages.has(photo.image)) {
-        throw new HttpError(409, `같은 사진이 두 번 있습니다: ${photo.image}`);
+        throw new HttpError(422, `같은 사진이 두 번 있습니다: ${photo.image}`);
       }
       seenImages.add(photo.image);
     }
@@ -2430,18 +2443,50 @@ async function handleAction(
     if (file.sha !== body.sha) {
       throw new HttpError(409, "이 News가 다른 곳에서 먼저 수정되었습니다.");
     }
+
+    const current = (parseNews(file.content).front.date || "").slice(0, 10);
+    const wanted = typeof body.date === "string" && body.date
+      ? safeIsoDate(body.date, "Date")
+      : current;
+    const slug = name.replace(/^\d{4}-\d{2}-\d{2}-/, "").replace(/\.md$/, "");
+    const movedPath = `_news/${wanted}-${slug}.md`;
+    const moving = wanted !== current && movedPath !== path;
+    if (moving && await existingFileSha(movedPath)) {
+      throw new HttpError(
+        422,
+        `${wanted} 날짜의 같은 slug News가 이미 있습니다.`,
+      );
+    }
+
     const content = rewriteNews(file.content, {
+      date: `${wanted} 09:00:00+0900`,
       display_date: displayDate ? JSON.stringify(displayDate) : null,
     }, text);
+
+    // The date is part of the filename, so a date change writes the new file and removes the old.
     const saved = await saveGitHubFile(
-      path,
+      moving ? movedPath : path,
       content,
-      `cms: update news ${name}`,
-      file.sha,
+      `cms: update news ${moving ? `${wanted}-${slug}.md` : name}`,
+      moving ? undefined : file.sha,
       commitAuthor(profile),
     );
-    await audit(profile, "admin.news.update", path, saved.commit_sha);
-    return saved;
+    if (moving) {
+      await deleteGitHubFile(
+        path,
+        `cms: move news ${name} to ${wanted}-${slug}.md`,
+        file.sha,
+        commitAuthor(profile),
+      );
+    }
+    await audit(profile, "admin.news.update", saved.path, saved.commit_sha, {
+      moved_from: moving ? path : undefined,
+    });
+    return {
+      ...saved,
+      resource_id: `news:${wanted}-${slug}.md`,
+      moved: moving,
+    };
   }
 
   if (action === "admin.news.remove") {

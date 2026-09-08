@@ -316,6 +316,16 @@
     elements.globalStatus.hidden = !message;
   }
 
+  const MEMBERS_FILE_SCREENS = ["members", "pi", "alumni_intern", "alumni_undergrad"];
+
+  function invalidateMembersFile(except) {
+    if (except !== "members") membersSha = "";
+    if (except !== "pi") piSha = "";
+    if (MEMBERS_FILE_SCREENS.includes(dataState.collection) && except !== dataState.collection) {
+      dataState = { ...dataState, sha: "" };
+    }
+  }
+
   function panelFor(key) {
     const panels = {
       members: elements.membersEditor,
@@ -384,6 +394,7 @@
 
   // Each screen fetches its data on first visit rather than at sign-in.
   function activate(key) {
+    if (!confirmDiscard()) return;
     showView(key);
     const tab = allTabs().find((entry) => entry.key === key);
     if (key === "members") {
@@ -399,7 +410,9 @@
       showPubsList();
       if (!pubsSha) loadPubs();
     } else if (tab && tab.collection) {
-      if (dataState.collection !== tab.collection) loadData(tab.collection);
+      if (dataState.collection !== tab.collection || !dataState.sha) {
+        loadData(tab.collection);
+      }
     } else if (key === "content" && !currentResource && resources.length) {
       loadResource(elements.resourceSelect.value || resources[0].id);
     }
@@ -527,6 +540,30 @@
 
   let membersSha = "";
   let fieldSeq = 0;
+  let dirty = false;
+
+  function markClean() {
+    dirty = false;
+  }
+
+  // Every editor is generated, so a delegated listener is the only way to catch them all.
+  function watchEdits() {
+    ["input", "change"].forEach((type) => {
+      elements.app.addEventListener(type, () => { dirty = true; });
+    });
+    window.addEventListener("beforeunload", (event) => {
+      if (!dirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+  }
+
+  function confirmDiscard() {
+    if (!dirty) return true;
+    if (!window.confirm("저장하지 않은 수정이 있습니다. 버리고 이동할까요?")) return false;
+    markClean();
+    return true;
+  }
 
   function slugify(value) {
     return String(value || "").toLowerCase().normalize("NFKD")
@@ -742,7 +779,7 @@
         preview.src = dataUrl;
         preview.hidden = false;
         empty.hidden = true;
-        return "사진을 올렸습니다. 아래 Save를 눌러야 프로필에 연결됩니다.";
+        return "사진을 저장소에 올렸습니다. 프로필에 연결하려면 아래 Save를 눌러 주세요.";
       });
     });
 
@@ -756,7 +793,7 @@
           content_base64: await fileToBase64(file),
         });
         cv.value = data.cv;
-        return "CV를 올렸습니다. 아래 Save를 눌러야 프로필에 연결됩니다.";
+        return "CV를 저장소에 올렸습니다. 프로필에 연결하려면 아래 Save를 눌러 주세요.";
       });
     });
 
@@ -843,6 +880,7 @@
     try {
       const data = await invoke({ action: "admin.members.read" });
       membersSha = data.sha;
+      markClean();
       elements.membersSha.textContent = `revision ${data.sha.slice(0, 8)}`;
       renderMembers(data.sections || {});
     } catch (error) {
@@ -863,6 +901,7 @@
     try {
       const data = await invoke({ action: "admin.members.save", sha: membersSha, sections });
       membersSha = data.sha;
+      markClean();
       elements.membersSha.textContent = `revision ${data.sha.slice(0, 8)}`;
       const parts = [];
       if (data.added) parts.push(`추가 ${data.added}명`);
@@ -885,7 +924,7 @@
   }
 
   elements.membersSave.addEventListener("click", saveMembers);
-  elements.membersReload.addEventListener("click", loadMembers);
+  elements.membersReload.addEventListener("click", () => { if (confirmDiscard()) loadMembers(); });
 
   // ── Advisor (PI) ───────────────────────────────────────────────────────────
   let piSha = "";
@@ -966,7 +1005,7 @@
         preview.src = dataUrl;
         preview.hidden = false;
         empty.hidden = true;
-        return "사진을 올렸습니다. 아래 Save를 눌러야 반영됩니다.";
+        return "사진을 저장소에 올렸습니다. 반영하려면 아래 Save를 눌러 주세요.";
       });
     });
     photoWrap.append(preview, empty, pickLabel, imageField);
@@ -1025,7 +1064,7 @@
           content_base64: await fileToBase64(file),
         });
         cv.value = saved.cv;
-        return "CV를 올렸습니다. 아래 Save를 눌러야 반영됩니다.";
+        return "CV를 저장소에 올렸습니다. 반영하려면 아래 Save를 눌러 주세요.";
       });
     });
     cvRow.append(labelled("CV (PDF 업로드 또는 주소 입력)", cv), cvPickLabel);
@@ -1070,6 +1109,7 @@
     try {
       const data = await invoke({ action: "admin.pi.read" });
       piSha = data.sha;
+      markClean();
       piMemberId = data.member_id;
       elements.piSha.textContent = `revision ${data.sha.slice(0, 8)}`;
       renderPi(data.pi || {});
@@ -1118,6 +1158,8 @@
     try {
       const saved = await invoke({ action: "admin.pi.save", sha: piSha, pi });
       piSha = saved.sha;
+      markClean();
+      invalidateMembersFile("pi");
       elements.piSha.textContent = `revision ${saved.sha.slice(0, 8)}`;
       showStatus("저장했습니다. 배포가 끝나면 Advisor 페이지에 반영됩니다.", "success");
     } catch (error) {
@@ -1132,7 +1174,7 @@
     }
   }
 
-  elements.piReload.addEventListener("click", loadPi);
+  elements.piReload.addEventListener("click", () => { if (confirmDiscard()) loadPi(); });
   elements.piSave.addEventListener("click", savePi);
 
   // ── Generic _data collections (equipment, facilities, positions) ───────────
@@ -1223,7 +1265,7 @@
           preview.src = dataUrl;
           preview.hidden = false;
           empty.hidden = true;
-          return "사진을 올렸습니다. 아래 Save를 눌러야 연결됩니다.";
+          return "사진을 저장소에 올렸습니다. 연결하려면 아래 Save를 눌러 주세요.";
         });
       });
       side.append(preview, empty, pickLabel);
@@ -1307,6 +1349,8 @@
         items,
       });
       dataState.sha = saved.sha;
+      markClean();
+      invalidateMembersFile(dataState.collection);
       elements.dataSha.textContent = `revision ${saved.sha.slice(0, 8)}`;
       renderData(saved.items || items);
       showStatus("저장했습니다. 배포가 끝나면 홈페이지에 반영됩니다.", "success");
@@ -1322,7 +1366,9 @@
     }
   }
 
-  elements.dataReload.addEventListener("click", () => loadData(dataState.collection));
+  elements.dataReload.addEventListener("click", () => {
+    if (confirmDiscard()) loadData(dataState.collection);
+  });
   elements.dataSave.addEventListener("click", saveData);
   elements.dataAdd.addEventListener("click", () => {
     const blank = {};
@@ -1396,6 +1442,7 @@
     try {
       const data = await invoke({ action: "admin.pubs.read" });
       pubsSha = data.sha;
+      markClean();
       pubsEntries = data.entries || [];
       elements.pubsSha.textContent = `revision ${data.sha.slice(0, 8)}`;
       renderPubs();
@@ -1496,6 +1543,7 @@
     try {
       const data = await invoke({ action: "admin.pubs.save", sha: pubsSha, entries: next });
       pubsSha = data.sha;
+      markClean();
       showStatus("저장했습니다. 배포가 끝나면 Publications 페이지에 반영됩니다.", "success");
       await loadPubs();
       showPubsList();
@@ -1518,6 +1566,7 @@
       const next = pubsEntries.filter((item) => item.key !== entry.key);
       const data = await invoke({ action: "admin.pubs.save", sha: pubsSha, entries: next });
       pubsSha = data.sha;
+      markClean();
       showStatus("삭제했습니다.", "success");
       await loadPubs();
     } catch (error) {
@@ -1525,7 +1574,11 @@
     }
   }
 
-  elements.pubsReload.addEventListener("click", () => { showPubsList(); loadPubs(); });
+  elements.pubsReload.addEventListener("click", () => {
+    if (!confirmDiscard()) return;
+    showPubsList();
+    loadPubs();
+  });
   elements.pubsEditBack.addEventListener("click", showPubsList);
   elements.pubsEditSave.addEventListener("click", savePub);
   elements.pubsNew.addEventListener("click", () => openPub(null));
@@ -1639,6 +1692,7 @@
     try {
       const data = await invoke({ action: "admin.gallery.read" });
       gallerySha = data.sha;
+      markClean();
       if (Array.isArray(data.categories) && data.categories.length) {
         galleryCategories = data.categories;
       }
@@ -1697,6 +1751,7 @@
         photos: rows.map(({ image, caption, category, date }) => ({ image, caption, category, date })),
       });
       gallerySha = data.sha;
+      markClean();
       elements.gallerySha.textContent = `revision ${data.sha.slice(0, 8)}`;
       renderGallery(data.photos || []);
       showStatus("저장했습니다. 배포가 끝나면 Gallery 페이지에 반영됩니다.", "success");
@@ -1712,7 +1767,7 @@
     }
   }
 
-  elements.galleryReload.addEventListener("click", loadGallery);
+  elements.galleryReload.addEventListener("click", () => { if (confirmDiscard()) loadGallery(); });
   elements.gallerySave.addEventListener("click", saveGallery);
   elements.galleryFile.addEventListener("change", async () => {
     const files = Array.from(elements.galleryFile.files || []);
@@ -1805,10 +1860,12 @@
     try {
       const data = await invoke({ action: "admin.news.item", resource_id: item.id });
       newsEditing = { id: item.id, sha: data.sha };
+      markClean();
       elements.newsEditTitle.textContent = item.slug.replace(/-/g, " ");
       elements.newsEditPath.textContent = data.path;
       elements.newsEditSha.textContent = `revision ${data.sha.slice(0, 8)}`;
       elements.newsEditDate.value = data.date;
+      elements.newsEditDate.readOnly = false;
       elements.newsEditDisplay.value = data.display_date;
       elements.newsEditBody.value = data.body;
       elements.newsListView.hidden = true;
@@ -1828,10 +1885,20 @@
         action: "admin.news.update",
         resource_id: newsEditing.id,
         sha: newsEditing.sha,
+        date: elements.newsEditDate.value,
         display_date: elements.newsEditDisplay.value,
         body: elements.newsEditBody.value,
       });
       newsEditing.sha = data.sha;
+      markClean();
+      if (data.moved) {
+        // The file was renamed, so the old list entry and revision no longer exist.
+        newsEditing.id = data.resource_id;
+        await loadNews();
+        showStatus("날짜를 바꿔 파일 이름도 함께 옮겼습니다.", "success");
+        showNewsList();
+        return;
+      }
       elements.newsEditSha.textContent = `revision ${data.sha.slice(0, 8)}`;
       showStatus("저장했습니다. 배포가 끝나면 홈페이지에 반영됩니다.", "success");
     } catch (error) {
@@ -1861,7 +1928,7 @@
     }
   }
 
-  elements.newsReload.addEventListener("click", loadNews);
+  elements.newsReload.addEventListener("click", () => { if (confirmDiscard()) loadNews(); });
   elements.newsEditSave.addEventListener("click", saveNews);
   elements.newsEditBack.addEventListener("click", showNewsList);
   elements.newsNew.addEventListener("click", () => showView("newsNew"));
@@ -2156,6 +2223,8 @@
       await enterApp();
     }
   }
+
+  watchEdits();
 
   start().catch((error) => {
     elements.setupNotice.hidden = false;
