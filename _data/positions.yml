@@ -5,7 +5,7 @@ positions:
       - "Background in mechanical engineering, electrical engineering, robotics, or related field"
       - "Proficiency in C++ and/or Python; familiarity with ROS/ROS2"
       - "Interest in control theory, optimization, or real robot experimentation"
-      - "Enrollment through UST (Korea University of Science and Technology)"
+      - "Enrollment through UST (Korea University of Science and Technology) or other university (yonsei, korea, hanyang, etc)"
     open: true
 
   - title: "M.S. / Ph.D. Student — Visuomotor Policy & Imitation Learning"
@@ -14,7 +14,7 @@ positions:
       - "Background in machine learning, computer science, or robotics"
       - "Experience with PyTorch or similar deep learning frameworks"
       - "Interest in robot learning, imitation learning, or foundation models"
-      - "Enrollment through UST (Korea University of Science and Technology)"
+      - "Enrollment through UST (Korea University of Science and Technology) or other university (yonsei, korea, hanyang, etc)"
     open: true
 
   - title: "Undergraduate / Intern Researcher"
