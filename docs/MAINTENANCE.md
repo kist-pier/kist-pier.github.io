@@ -157,6 +157,7 @@ delete from public.cms_profiles where lower(email) = lower('나간사람_이메�
 | 메뉴 | 하는 일 |
 |---|---|
 | **Members** | 학생 카드별 편집, 추가/삭제, **사진 업로드**, **CV(PDF) 업로드** |
+| **Advisor (PI)** | 지도교수 페이지 — 사진, 링크 4개(Email·Scholar·GitHub·Website), 소개글, 학력, 경력, 수상 |
 | **News** | 목록 → 편집/삭제, 새 글 작성 |
 | **Gallery** | 사진 여러 장 한 번에 업로드, 캡션·분류·날짜 편집 |
 | **Publications** | 목록 → 편집/삭제, **BibTeX 붙여넣기로 자동 채우기** |
@@ -175,7 +176,7 @@ delete from public.cms_profiles where lower(email) = lower('나간사람_이메�
 
 ### CMS로 안 되는 것
 
-- **PI(지도교수)와 졸업생 항목** — 형식이 달라서 `Website content`의 Members 원본 편집기로
+- **졸업생 항목** — 형식이 달라서 `Website content`의 Members 원본 편집기로
 - 페이지 레이아웃·디자인 변경
 - 사진 삭제 (참조만 빼면 되고, 파일은 남습니다)
 

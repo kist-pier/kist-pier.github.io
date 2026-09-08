@@ -107,7 +107,26 @@
     dataReload: document.getElementById("data-reload"),
     dataAdd: document.getElementById("data-add"),
     dataSave: document.getElementById("data-save"),
+    piEditor: document.getElementById("pi-editor"),
+    piBody: document.getElementById("pi-body"),
+    piSha: document.getElementById("pi-sha"),
+    piSave: document.getElementById("pi-save"),
+    piReload: document.getElementById("pi-reload"),
   };
+
+  // The four link buttons the advisor page renders, in the order they appear there.
+  const PI_LINKS = [
+    { name: "email", label: "Email", placeholder: "name@kist.re.kr" },
+    { name: "scholar", label: "Google Scholar", placeholder: "https://scholar.google.com/citations?user=..." },
+    { name: "github", label: "GitHub", placeholder: "https://github.com/..." },
+    { name: "website", label: "Website", placeholder: "https://..." },
+  ];
+  const PI_RECORD_LISTS = [
+    { name: "education", label: "Education", keys: [
+      { key: "year", label: "기간" }, { key: "degree", label: "학위" }, { key: "institution", label: "소속" }] },
+    { name: "career", label: "Career", keys: [
+      { key: "period", label: "기간" }, { key: "title", label: "직위" }, { key: "institution", label: "소속" }] },
+  ];
 
   const DATA_COLLECTIONS = [
     { id: "equipment", label: "Lab equipment" },
@@ -199,6 +218,10 @@
       };
     }
 
+    if (body.action === "admin.pi.read") {
+      return { sha: demoRevision(), member_id: "pi-demo", pi: { research_interests: [], awards: [], education: [], career: [] } };
+    }
+
     if (body.action === "admin.data.read") {
       return { sha: demoRevision(), collection: body.collection, label: "Demo", path: "-", uploads: false, fields: [], items: [] };
     }
@@ -276,6 +299,7 @@
   function showView(view) {
     const views = {
       members: elements.membersEditor,
+      pi: elements.piEditor,
       gallery: elements.galleryEditor,
       pubs: elements.pubsManager,
       data: elements.dataEditor,
@@ -296,6 +320,7 @@
     });
     const titles = {
       members: "Members",
+      pi: "Advisor (PI)",
       gallery: "Gallery",
       pubs: "Publications",
       data: "Data",
@@ -336,6 +361,7 @@
     const items = profile.role === "admin"
       ? [
         { view: "members", label: "Members" },
+        { view: "pi", label: "Advisor (PI)" },
         { view: "news", label: "News" },
         { view: "gallery", label: "Gallery" },
         { view: "pubs", label: "Publications" },
@@ -363,6 +389,7 @@
           showNewsList();
           loadNews();
         }
+        if (item.view === "pi" && !piSha) loadPi();
         if (item.view === "gallery" && !gallerySha) loadGallery();
         if (item.view === "pubs") {
           showPubsList();
@@ -813,6 +840,220 @@
 
   elements.membersSave.addEventListener("click", saveMembers);
   elements.membersReload.addEventListener("click", loadMembers);
+
+  // ── Advisor (PI) ───────────────────────────────────────────────────────────
+  let piSha = "";
+  let piMemberId = "";
+
+  function piSection(title) {
+    const block = document.createElement("section");
+    block.className = "pi-section";
+    const heading = document.createElement("h3");
+    heading.textContent = title;
+    const grid = document.createElement("div");
+    grid.className = "form-grid";
+    block.append(heading, grid);
+    return { block, grid };
+  }
+
+  function recordRow(spec, row) {
+    const line = document.createElement("div");
+    line.className = "pi-record-row";
+    spec.keys.forEach((field) => {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.dataset.key = field.key;
+      input.value = row[field.key] || "";
+      input.placeholder = field.label;
+      input.setAttribute("aria-label", `${spec.label} ${field.label}`);
+      line.append(input);
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "text-button member-edit-remove";
+    remove.textContent = "삭제";
+    remove.addEventListener("click", () => line.remove());
+    line.append(remove);
+    return line;
+  }
+
+  function renderPi(pi) {
+    const parts = [];
+
+    // Photo + basics
+    const basics = piSection("기본 정보");
+    const photoWrap = document.createElement("div");
+    photoWrap.className = "member-edit-side pi-photo";
+    const preview = document.createElement("img");
+    preview.className = "member-edit-preview";
+    preview.alt = "";
+    if (pi.image) preview.src = pi.image;
+    else preview.hidden = true;
+    const empty = document.createElement("div");
+    empty.className = "member-edit-nophoto";
+    empty.textContent = "사진 없음";
+    empty.hidden = Boolean(pi.image);
+    const pickLabel = document.createElement("label");
+    pickLabel.className = "button button-secondary member-edit-pick";
+    pickLabel.textContent = "사진 올리기";
+    const pick = document.createElement("input");
+    pick.type = "file";
+    pick.accept = "image/*";
+    pick.hidden = true;
+    pickLabel.append(pick);
+    const imageField = document.createElement("input");
+    imageField.type = "hidden";
+    imageField.dataset.field = "image";
+    imageField.value = pi.image || "";
+    pick.addEventListener("change", () => {
+      const file = pick.files && pick.files[0];
+      pick.value = "";
+      if (!file) return;
+      withUpload(pickLabel, "사진을 올리는 중입니다…", async () => {
+        const dataUrl = await resizeToJpeg(file);
+        const saved = await invoke({
+          action: "admin.members.image",
+          member_id: piMemberId,
+          content_base64: dataUrl.split(",")[1],
+        });
+        imageField.value = saved.image;
+        preview.src = dataUrl;
+        preview.hidden = false;
+        empty.hidden = true;
+        return "사진을 올렸습니다. 아래 Save를 눌러야 반영됩니다.";
+      });
+    });
+    photoWrap.append(preview, empty, pickLabel, imageField);
+
+    [["name_en", "English name", true], ["name_ko", "한글 이름", false],
+     ["role", "Role", true], ["initials", "Initials (사진 없을 때 표시)", false]]
+      .forEach(([name, label, required]) => {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.dataset.field = name;
+        input.value = pi[name] || "";
+        if (required) input.required = true;
+        basics.grid.append(labelled(required ? `${label} *` : label, input));
+      });
+    const basicsRow = document.createElement("div");
+    basicsRow.className = "pi-basics";
+    basicsRow.append(photoWrap, basics.grid);
+    basics.block.replaceChildren(basics.block.firstChild, basicsRow);
+    parts.push(basics.block);
+
+    // The four link buttons
+    const links = piSection("링크 (페이지의 버튼 4개)");
+    PI_LINKS.forEach((spec) => {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.dataset.field = spec.name;
+      input.value = pi[spec.name] || "";
+      input.placeholder = spec.placeholder;
+      links.grid.append(labelled(spec.label, input));
+    });
+    parts.push(links.block);
+
+    // Bio and interests
+    const about = piSection("소개");
+    [["bio", "Bio", 8], ["research_interests", "Research interests (한 줄에 하나)", 5],
+     ["awards", "Awards & Honors (한 줄에 하나, 없으면 비워둠)", 4]]
+      .forEach(([name, label, rows]) => {
+        const area = document.createElement("textarea");
+        area.rows = rows;
+        area.dataset.field = name;
+        area.value = Array.isArray(pi[name]) ? pi[name].join("\n") : (pi[name] || "");
+        about.grid.append(labelled(label, area, true));
+      });
+    parts.push(about.block);
+
+    // Education and career
+    PI_RECORD_LISTS.forEach((spec) => {
+      const section = piSection(spec.label);
+      const list = document.createElement("div");
+      list.className = "pi-record-list";
+      list.dataset.list = spec.name;
+      (pi[spec.name] || []).forEach((row) => list.append(recordRow(spec, row)));
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "button button-secondary";
+      add.textContent = `+ ${spec.label} 추가`;
+      add.addEventListener("click", () => list.append(recordRow(spec, {})));
+      section.block.replaceChildren(section.block.firstChild, list, add);
+      parts.push(section.block);
+    });
+
+    elements.piBody.replaceChildren(...parts);
+  }
+
+  async function loadPi() {
+    elements.piBody.textContent = "불러오는 중…";
+    showStatus("");
+    try {
+      const data = await invoke({ action: "admin.pi.read" });
+      piSha = data.sha;
+      piMemberId = data.member_id;
+      elements.piSha.textContent = `revision ${data.sha.slice(0, 8)}`;
+      renderPi(data.pi || {});
+    } catch (error) {
+      elements.piBody.textContent = "";
+      showStatus(error.message, "error");
+    }
+  }
+
+  function collectPi() {
+    const value = (name) => {
+      const node = elements.piBody.querySelector(`[data-field="${name}"]`);
+      return node ? node.value.trim() : "";
+    };
+    const lines = (name) =>
+      value(name).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    const pi = {
+      image: value("image"),
+      bio: value("bio"),
+      research_interests: lines("research_interests"),
+      awards: lines("awards"),
+    };
+    ["name_en", "name_ko", "role", "initials"].forEach((name) => { pi[name] = value(name); });
+    PI_LINKS.forEach((spec) => { pi[spec.name] = value(spec.name); });
+    PI_RECORD_LISTS.forEach((spec) => {
+      const list = elements.piBody.querySelector(`[data-list="${spec.name}"]`);
+      pi[spec.name] = Array.from(list ? list.querySelectorAll(".pi-record-row") : []).map((line) =>
+        Object.fromEntries(spec.keys.map((field) => [
+          field.key,
+          line.querySelector(`[data-key="${field.key}"]`).value.trim(),
+        ]))
+      );
+    });
+    return pi;
+  }
+
+  async function savePi() {
+    const pi = collectPi();
+    if (!pi.name_en || !pi.role) {
+      showStatus("English name과 Role은 필수입니다.", "error");
+      return;
+    }
+    setBusy(elements.piSave, true, "Saving…");
+    showStatus("");
+    try {
+      const saved = await invoke({ action: "admin.pi.save", sha: piSha, pi });
+      piSha = saved.sha;
+      elements.piSha.textContent = `revision ${saved.sha.slice(0, 8)}`;
+      showStatus("저장했습니다. 배포가 끝나면 Advisor 페이지에 반영됩니다.", "success");
+    } catch (error) {
+      showStatus(
+        error.status === 409
+          ? "members.yml이 다른 곳에서 먼저 수정되었습니다. Reload 후 다시 시도해 주세요."
+          : error.message,
+        "error",
+      );
+    } finally {
+      setBusy(elements.piSave, false);
+    }
+  }
+
+  elements.piReload.addEventListener("click", loadPi);
+  elements.piSave.addEventListener("click", savePi);
 
   // ── Generic _data collections (equipment, facilities, positions) ───────────
   // Everything here is driven by the field schema the server sends, so a new collection

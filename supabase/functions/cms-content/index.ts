@@ -651,6 +651,52 @@ function yamlFieldValue(
 
 type AdminMember = Record<string, string | string[]>;
 
+// The PI entry has its own shape: four link buttons, a folded biography block, and two
+// lists of records. Written back field by field so the file's comments and the folded
+// style of `bio` survive.
+const PI_LINK_FIELDS = ["email", "scholar", "github", "website"] as const;
+const PI_TEXT_FIELDS = ["name_en", "name_ko", "initials", "role"] as const;
+const PI_RECORD_LISTS = {
+  education: ["degree", "institution", "year"],
+  career: ["title", "institution", "period"],
+} as const;
+
+function yamlFolded(value: string): Scalar {
+  const node = new Scalar(value);
+  node.type = Scalar.BLOCK_FOLDED;
+  return node;
+}
+
+function normalizeMemberList(value: unknown, label: string): string[] {
+  const rows = value ?? [];
+  if (!Array.isArray(rows) || rows.length > 40) {
+    throw new HttpError(400, `${label} 목록이 올바르지 않습니다.`);
+  }
+  return rows.map((item) => safePlainText(item, label, 300)).filter(Boolean);
+}
+
+function normalizeRecordList(
+  value: unknown,
+  keys: readonly string[],
+  label: string,
+): Array<Record<string, string>> {
+  const rows = value ?? [];
+  if (!Array.isArray(rows) || rows.length > 40) {
+    throw new HttpError(400, `${label} 목록이 올바르지 않습니다.`);
+  }
+  return rows.map((row) => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) {
+      throw new HttpError(400, `${label} 항목이 올바르지 않습니다.`);
+    }
+    const input = row as Record<string, unknown>;
+    const record: Record<string, string> = {};
+    for (const key of keys) {
+      record[key] = safePlainText(input[key] ?? "", `${label} ${key}`, 300);
+    }
+    return record;
+  }).filter((record) => keys.some((key) => record[key]));
+}
+
 function safeMemberId(value: unknown): string {
   const id = safePlainText(value, "Member id", 80).toLowerCase();
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(id)) {
@@ -1549,6 +1595,141 @@ async function handleAction(
     return isCv
       ? { ...saved, cv: `/${path}` }
       : { ...saved, image: `/${path}` };
+  }
+
+  if (action === "admin.pi.read") {
+    requireAdmin(profile);
+    const file = await readGitHubFile("_data/members.yml");
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error("members.yml could not be parsed");
+    }
+    const data = document.toJS() as { pi?: Array<Record<string, unknown>> };
+    const pi = (data.pi ?? [])[0];
+    if (!pi) throw new HttpError(404, "PI 항목을 찾을 수 없습니다.");
+    const text = (name: string) =>
+      typeof pi[name] === "string" ? pi[name] as string : "";
+    const list = (name: string) =>
+      Array.isArray(pi[name])
+        ? (pi[name] as unknown[]).map((item) => String(item))
+        : [];
+    const records = (name: keyof typeof PI_RECORD_LISTS) =>
+      (Array.isArray(pi[name])
+        ? pi[name] as Array<Record<string, unknown>>
+        : []).map((row) =>
+          Object.fromEntries(
+            PI_RECORD_LISTS[name].map((
+              key,
+            ) => [key, typeof row[key] === "string" ? row[key] : ""]),
+          )
+        );
+    return {
+      sha: file.sha,
+      member_id: text("id"),
+      pi: {
+        ...Object.fromEntries(PI_TEXT_FIELDS.map((name) => [name, text(name)])),
+        ...Object.fromEntries(PI_LINK_FIELDS.map((name) => [name, text(name)])),
+        image: text("image"),
+        bio: text("bio"),
+        research_interests: list("research_interests"),
+        awards: list("awards"),
+        education: records("education"),
+        career: records("career"),
+      },
+    };
+  }
+
+  if (action === "admin.pi.save") {
+    requireAdmin(profile);
+    if (typeof body.sha !== "string") {
+      throw new HttpError(400, "members.yml revision이 없습니다.");
+    }
+    const input =
+      (body.pi && typeof body.pi === "object" && !Array.isArray(body.pi)
+        ? body.pi
+        : {}) as Record<string, unknown>;
+
+    const values: Record<string, string> = {};
+    for (const name of PI_TEXT_FIELDS) {
+      values[name] = safePlainText(input[name] ?? "", name, 300);
+    }
+    if (!values.name_en) {
+      throw new HttpError(400, "English name은 비워둘 수 없습니다.");
+    }
+    if (!values.role) throw new HttpError(400, "Role은 비워둘 수 없습니다.");
+    // Email is plain text rather than a URL: the site links it with mailto:.
+    values.email = safePlainText(input.email ?? "", "Email", 200);
+    for (const name of ["scholar", "github", "website"] as const) {
+      values[name] = safeUrl(input[name] ?? "", name);
+    }
+    values.image = safeMemberImage(input.image);
+    const bio = safePlainText(input.bio ?? "", "Bio", 4000);
+    const interests = normalizeMemberList(
+      input.research_interests,
+      "Research interests",
+    );
+    const awards = normalizeMemberList(input.awards, "Awards");
+    const education = normalizeRecordList(
+      input.education,
+      PI_RECORD_LISTS.education,
+      "Education",
+    );
+    const career = normalizeRecordList(
+      input.career,
+      PI_RECORD_LISTS.career,
+      "Career",
+    );
+
+    const file = await readGitHubFile("_data/members.yml");
+    if (file.sha !== body.sha) {
+      throw new HttpError(
+        409,
+        "members.yml이 다른 곳에서 먼저 수정되었습니다.",
+      );
+    }
+    const document = parseDocument(file.content, { keepSourceTokens: true });
+    if (document.errors.length) {
+      throw new Error("members.yml could not be parsed");
+    }
+    if (!document.hasIn(["pi", 0])) {
+      throw new HttpError(404, "PI 항목을 찾을 수 없습니다.");
+    }
+
+    for (const name of [...PI_TEXT_FIELDS, ...PI_LINK_FIELDS]) {
+      document.setIn(["pi", 0, name], yamlQuoted(values[name]));
+    }
+    // image is written unquoted, matching every other path in this file.
+    if (values.image) document.setIn(["pi", 0, "image"], values.image);
+    else if (document.hasIn(["pi", 0, "image"])) {
+      document.deleteIn(["pi", 0, "image"]);
+    }
+    // bio keeps its folded block style; a plain scalar would rewrite the whole paragraph.
+    document.setIn(["pi", 0, "bio"], yamlFolded(bio));
+    document.setIn(["pi", 0, "research_interests"], interests);
+    document.setIn(["pi", 0, "awards"], awards);
+    for (const [name, keys] of Object.entries(PI_RECORD_LISTS)) {
+      const rows = name === "education" ? education : career;
+      document.setIn(
+        ["pi", 0, name],
+        rows.map((row) =>
+          Object.fromEntries(keys.map((key) => [key, yamlQuoted(row[key])]))
+        ),
+      );
+    }
+
+    const saved = await saveGitHubFile(
+      "_data/members.yml",
+      document.toString(YAML_OUTPUT),
+      "cms: update PI profile",
+      file.sha,
+    );
+    await audit(
+      profile,
+      "admin.pi.save",
+      "_data/members.yml",
+      saved.commit_sha,
+    );
+    return saved;
   }
 
   if (action === "admin.data.read") {

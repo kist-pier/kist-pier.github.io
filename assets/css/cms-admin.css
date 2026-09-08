@@ -525,3 +525,56 @@ textarea { line-height: 1.55; resize: vertical; }
 .data-edit-card .member-edit-side:empty {
   display: none;
 }
+
+/* ── Advisor (PI) editor ───────────────────────────────────────────────────── */
+
+.pi-section {
+  margin-bottom: 1.75rem;
+}
+
+.pi-section > h3 {
+  margin: 0 0 0.75rem;
+  padding-bottom: 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-bottom: 1px solid var(--cms-border, #e8eaf0);
+}
+
+.pi-basics {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.pi-basics > .form-grid {
+  flex: 1;
+  min-width: 0;
+}
+
+.pi-photo {
+  flex: 0 0 150px;
+}
+
+.pi-record-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.pi-record-row {
+  display: grid;
+  grid-template-columns: 0.9fr 1.2fr 1.4fr auto;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+@media (max-width: 760px) {
+  .pi-basics {
+    flex-direction: column;
+  }
+
+  .pi-record-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
