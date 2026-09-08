@@ -1,0 +1,33 @@
+areas:
+  # summary -> the band on the home page; description and focus -> the Research Areas page.
+  # Both pages read this file, so an area is written once.
+
+  - title: "Physical Embodiment"
+    icon: "fa-solid fa-hand-fist"
+    summary: "Force-aware control and tactile sensing for safe, stable interaction in unstructured environments."
+    description: "We integrate force-aware control and tactile sensing to enhance the physical capabilities of robotic systems. By processing high-fidelity contact feedback and haptic data, our robots achieve safe and stable interaction in unstructured environments, moving beyond purely vision-based approaches."
+    focus:
+      - "force control"
+      - "tactile feedback"
+      - "hardware-software co-design"
+      - "contact-rich interaction"
+
+  - title: "Visuomotor Policy"
+    icon: "fa-solid fa-eye"
+    summary: "End-to-end learning systems mapping sensory inputs to motor commands via imitation learning and VLA."
+    description: "We build end-to-end learning systems that map sensory inputs directly to motor commands. Utilizing imitation learning and Vision-Language-Action (VLA) models, our research enables robots to generalize across diverse tasks and follow complex natural language instructions in real-world settings."
+    focus:
+      - "imitation learning"
+      - "VLA"
+      - "foundation models for robotics"
+      - "few-shot policy learning"
+
+  - title: "Whole-Body Control"
+    icon: "fa-solid fa-robot"
+    summary: "Optimization-based control for agile, balanced, and coordinated full-body movements."
+    description: "We develop optimization-based control frameworks for high-degree-of-freedom robotic systems. By leveraging Hierarchical Quadratic Programming (HQP) for multi-objective constraint satisfaction and Model Predictive Path Integral (MPPI) for nonlinear dynamics, we enable agile, balanced, and coordinated full-body movements."
+    focus:
+      - "HQP optimization"
+      - "MPPI"
+      - "dynamic locomotion"
+      - "multi-contact planning"

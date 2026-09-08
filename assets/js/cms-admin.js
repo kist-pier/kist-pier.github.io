@@ -128,6 +128,7 @@
     { label: "Gallery", tabs: [{ key: "gallery", label: "Gallery" }] },
     { label: "Publications", tabs: [{ key: "pubs", label: "Publications" }] },
     { label: "Lab info", tabs: [
+      { key: "research_areas", label: "Research areas", collection: "research_areas" },
       { key: "equipment", label: "Lab equipment", collection: "equipment" },
       { key: "facilities", label: "Facilities", collection: "facilities" },
       { key: "positions", label: "Open positions", collection: "positions" },

@@ -1177,6 +1177,47 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
       { name: "open", kind: "bool", label: "Currently open" },
     ],
   },
+  research_areas: {
+    path: "_data/research_areas.yml",
+    root: ["areas"],
+    label: "Research areas",
+    fields: [
+      {
+        name: "title",
+        kind: "text",
+        label: "Title",
+        required: true,
+        quoted: true,
+      },
+      {
+        name: "icon",
+        kind: "text",
+        label: "아이콘 (Font Awesome 클래스)",
+        quoted: true,
+      },
+      {
+        name: "summary",
+        kind: "text",
+        label: "한 줄 요약 (홈 화면)",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "description",
+        kind: "text",
+        label: "설명 (Research Areas 페이지)",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "focus",
+        kind: "list",
+        label: "Focus 태그",
+        quoted: true,
+        wide: true,
+      },
+    ],
+  },
   alumni_intern: {
     path: "_data/members.yml",
     root: ["alumni", "intern_alumni"],

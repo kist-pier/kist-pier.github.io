@@ -9,65 +9,23 @@ nav_order: 1
 
 <div class="research-page" data-reveal-group="research">
 
+  {% for area in site.data.research_areas.areas %}
   <div class="research-detail-card scroll-reveal">
     <div class="research-detail-header">
-      <span class="research-detail-icon"><i class="fa-solid fa-hand-fist"></i></span>
-      <h3>Physical Embodiment</h3>
+      <span class="research-detail-icon"><i class="{{ area.icon | escape }}"></i></span>
+      <h3>{{ area.title | escape }}</h3>
     </div>
-    <p class="research-detail-desc">
-      We integrate force-aware control and tactile sensing to enhance the physical capabilities of
-      robotic systems. By processing high-fidelity contact feedback and haptic data, our robots
-      achieve safe and stable interaction in unstructured environments, moving beyond purely
-      vision-based approaches.
-    </p>
+    <p class="research-detail-desc">{{ area.description | escape }}</p>
+    {% if area.focus and area.focus.size > 0 %}
     <div class="research-detail-meta">
       <strong>Focus:</strong>
-      <span class="focus-tag">force control</span>
-      <span class="focus-tag">tactile feedback</span>
-      <span class="focus-tag">hardware-software co-design</span>
-      <span class="focus-tag">contact-rich interaction</span>
+      {% for tag in area.focus %}
+      <span class="focus-tag">{{ tag | escape }}</span>
+      {% endfor %}
     </div>
+    {% endif %}
   </div>
-
-  <div class="research-detail-card scroll-reveal">
-    <div class="research-detail-header">
-      <span class="research-detail-icon"><i class="fa-solid fa-eye"></i></span>
-      <h3>Visuomotor Policy</h3>
-    </div>
-    <p class="research-detail-desc">
-      We build end-to-end learning systems that map sensory inputs directly to motor commands.
-      Utilizing imitation learning and Vision-Language-Action (VLA) models, our research enables
-      robots to generalize across diverse tasks and follow complex natural language instructions
-      in real-world settings.
-    </p>
-    <div class="research-detail-meta">
-      <strong>Focus:</strong>
-      <span class="focus-tag">imitation learning</span>
-      <span class="focus-tag">VLA</span>
-      <span class="focus-tag">foundation models for robotics</span>
-      <span class="focus-tag">few-shot policy learning</span>
-    </div>
-  </div>
-
-  <div class="research-detail-card scroll-reveal">
-    <div class="research-detail-header">
-      <span class="research-detail-icon"><i class="fa-solid fa-robot"></i></span>
-      <h3>Whole-Body Control</h3>
-    </div>
-    <p class="research-detail-desc">
-      We develop optimization-based control frameworks for high-degree-of-freedom robotic systems.
-      By leveraging Hierarchical Quadratic Programming (HQP) for multi-objective constraint
-      satisfaction and Model Predictive Path Integral (MPPI) for nonlinear dynamics, we enable
-      agile, balanced, and coordinated full-body movements.
-    </p>
-    <div class="research-detail-meta">
-      <strong>Focus:</strong>
-      <span class="focus-tag">HQP optimization</span>
-      <span class="focus-tag">MPPI</span>
-      <span class="focus-tag">dynamic locomotion</span>
-      <span class="focus-tag">multi-contact planning</span>
-    </div>
-  </div>
+  {% endfor %}
 
 </div>
 

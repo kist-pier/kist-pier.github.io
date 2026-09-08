@@ -43,23 +43,13 @@ social: false
     <h2 class="section-title">Research Areas</h2>
     <div class="research-grid" data-reveal-group="home-research">
 
+      {% for area in site.data.research_areas.areas %}
       <div class="research-preview-card scroll-reveal">
-        <div class="research-icon"><i class="fa-solid fa-hand-fist"></i></div>
-        <h3>Physical Embodiment</h3>
-        <p>Force-aware control and tactile sensing for safe, stable interaction in unstructured environments.</p>
+        <div class="research-icon"><i class="{{ area.icon | escape }}"></i></div>
+        <h3>{{ area.title | escape }}</h3>
+        <p>{{ area.summary | escape }}</p>
       </div>
-
-      <div class="research-preview-card scroll-reveal">
-        <div class="research-icon"><i class="fa-solid fa-eye"></i></div>
-        <h3>Visuomotor Policy</h3>
-        <p>End-to-end learning systems mapping sensory inputs to motor commands via imitation learning and VLA.</p>
-      </div>
-
-      <div class="research-preview-card scroll-reveal">
-        <div class="research-icon"><i class="fa-solid fa-robot"></i></div>
-        <h3>Whole-Body Control</h3>
-        <p>Optimization-based control for agile, balanced, and coordinated full-body movements.</p>
-      </div>
+      {% endfor %}
 
     </div>
 
