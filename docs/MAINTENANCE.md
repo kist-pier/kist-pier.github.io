@@ -97,20 +97,23 @@ Invite 버튼은 쓰지 마십시오. Supabase 기본 메일러는 프로젝트 
 
 ### 2단계 — 명단 등록
 
-Supabase → SQL Editor. `admin`이면 `role`을 `'admin'`, `member_id`를 `null`로 둡니다. `member`면
-`role`을 `'member'`, `member_id`를 `_data/members.yml`의 `id`와 정확히 같게 씁니다.
+Supabase → SQL Editor. 관리자를 등록하는 예입니다.
 
 ```sql
 insert into public.cms_profiles (user_id, email, display_name, role, member_id)
-select id, email, '정지연', 'member', 'intern-jiyeon-joung'
+select id, email, '관리자 계정', 'admin', null
 from auth.users
-where lower(email) = lower('0926187@kist.re.kr')
+where lower(email) = lower('pierlab.kist@gmail.com')
 on conflict (user_id) do update
 set display_name = excluded.display_name,
     role = excluded.role,
     member_id = excluded.member_id
 returning user_id, email, role;
 ```
+
+일반 멤버는 `'admin'`을 `'member'`로, `null`을 그 사람의 `member_id`로 바꿉니다. 예를 들어
+최원석을 등록하려면 `'최원석', 'member', 'undergrad-wonseok-choi'`, 이메일은
+`wonseok.choi@kist.re.kr`입니다. `member_id`는 `_data/members.yml`의 `id`와 정확히 같아야 합니다.
 
 **1행이 반환되어야 합니다.** `No rows returned`이면 이메일이 일치하지 않은 것입니다.
 `select email from auth.users;`로 실제 저장된 주소를 확인하십시오. 여기서 넘어가면 로그인은 되지만

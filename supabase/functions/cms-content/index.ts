@@ -1918,10 +1918,12 @@ async function handleAction(
     for (const name of [...PI_TEXT_FIELDS, ...PI_LINK_FIELDS]) {
       document.setIn(["pi", 0, name], yamlQuoted(values[name]));
     }
-    // image is written unquoted, matching every other path in this file.
-    if (values.image) document.setIn(["pi", 0, "image"], values.image);
-    else if (document.hasIn(["pi", 0, "image"])) {
-      document.deleteIn(["pi", 0, "image"]);
+    // image and cv are written unquoted, matching every other path in this file.
+    for (const name of ["image", "cv"] as const) {
+      if (values[name]) document.setIn(["pi", 0, name], values[name]);
+      else if (document.hasIn(["pi", 0, name])) {
+        document.deleteIn(["pi", 0, name]);
+      }
     }
     // bio keeps its folded block style; a plain scalar would rewrite the whole paragraph.
     document.setIn(["pi", 0, "bio"], yamlFolded(bio));
@@ -2004,6 +2006,19 @@ async function handleAction(
     const document = parseDocument(file.content, { keepSourceTokens: true });
     if (document.errors.length) {
       throw new Error(`${collection.path} could not be parsed`);
+    }
+    const existing = collection.root.reduce<unknown>(
+      (current, key) =>
+        current && typeof current === "object"
+          ? (current as Record<string, unknown>)[key]
+          : undefined,
+      document.toJS(),
+    );
+    if (!items.length && Array.isArray(existing) && existing.length > 0) {
+      throw new HttpError(
+        409,
+        `${collection.label} 목록이 비어 있습니다. 목록을 불러오지 못한 상태에서 저장하면 기존 내용이 지워지므로 막았습니다. Reload 후 다시 시도해 주세요.`,
+      );
     }
     // The list is rebuilt so entries can be reordered, so the heading comment and the blank
     // line between entries are re-attached by hand.
