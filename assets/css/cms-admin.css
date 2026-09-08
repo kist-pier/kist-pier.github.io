@@ -222,7 +222,7 @@ textarea { line-height: 1.55; resize: vertical; }
   gap: 1rem;
   padding-bottom: 0.6rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid var(--cms-border, #e8eaf0);
+  border-bottom: 1px solid var(--line);
 }
 
 .member-section-head h3 {
@@ -241,9 +241,9 @@ textarea { line-height: 1.55; resize: vertical; }
   display: flex;
   gap: 1.25rem;
   padding: 1.1rem;
-  border: 1px solid var(--cms-border, #e8eaf0);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .member-edit-side {
@@ -365,9 +365,9 @@ textarea { line-height: 1.55; resize: vertical; }
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--cms-border, #e8eaf0);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .cms-list-main {
@@ -430,9 +430,9 @@ textarea { line-height: 1.55; resize: vertical; }
   flex-direction: column;
   gap: 0.6rem;
   padding: 0.85rem;
-  border: 1px solid var(--cms-border, #e8eaf0);
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface);
 }
 
 .gallery-edit-preview {
@@ -482,7 +482,7 @@ textarea { line-height: 1.55; resize: vertical; }
 .pubs-bibtex {
   margin-bottom: 1.25rem;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--cms-border, #e8eaf0);
+  border: 1px solid var(--line);
   border-radius: 8px;
   background: #fafbfe;
 }
@@ -537,7 +537,7 @@ textarea { line-height: 1.55; resize: vertical; }
   padding-bottom: 0.4rem;
   font-size: 0.95rem;
   font-weight: 700;
-  border-bottom: 1px solid var(--cms-border, #e8eaf0);
+  border-bottom: 1px solid var(--line);
 }
 
 .pi-basics {
@@ -585,8 +585,11 @@ textarea { line-height: 1.55; resize: vertical; }
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--cms-border, #e8eaf0);
+  /* .topbar and .panel are centred at this width; without it the tabs sit flush against the
+     workspace padding and hang to the left of the card below them. */
+  max-width: 1380px;
+  margin: 0 auto 1.25rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .cms-tab {
