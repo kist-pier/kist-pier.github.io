@@ -1,0 +1,53 @@
+name: Supabase keep-alive
+
+# The Supabase free plan pauses a project after about 7 days of low activity, which takes /admin/
+# offline until an Owner resumes it. This job calls public.cms_heartbeat() every three days so the
+# project always has recent database traffic. It never touches site content.
+#
+# GitHub disables scheduled workflows after 60 days with no commits to the repository, and emails
+# the admins first. Re-enable it on the Actions tab, or press "Run workflow" here.
+
+on:
+  schedule:
+    - cron: "17 3 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Call cms_heartbeat
+        run: |
+          set -euo pipefail
+
+          # _config.yml is the single source of truth. Both values are public: the publishable key
+          # is already served to every visitor inside /assets/js/cms-admin.js.
+          url=$(sed -n 's/^  supabase_url: *"\(.*\)"$/\1/p' _config.yml)
+          key=$(sed -n 's/^  supabase_publishable_key: *"\(.*\)"$/\1/p' _config.yml)
+
+          if [ -z "$url" ] || [ -z "$key" ]; then
+            echo "cms.supabase_url or cms.supabase_publishable_key missing from _config.yml"
+            exit 1
+          fi
+
+          status=$(curl -sS -o /tmp/heartbeat.txt -w '%{http_code}' \
+            -X POST "$url/rest/v1/rpc/cms_heartbeat" \
+            -H "apikey: $key" \
+            -H "Authorization: Bearer $key" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          echo "HTTP $status"
+          cat /tmp/heartbeat.txt
+          echo
+
+          if [ "$status" != "200" ]; then
+            echo "Heartbeat failed. If the project is already paused, resume it at"
+            echo "https://supabase.com/dashboard/project/bebtbbhlakjlnhzeeaol"
+            exit 1
+          fi

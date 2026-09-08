@@ -32,7 +32,7 @@ pier-lab.kr은 Jekyll로 빌드해 GitHub Pages에서 서비스하는 정적 사
 | 증상 | 원인 | 대처 |
 |---|---|---|
 | `이메일 또는 비밀번호를 확인해 주세요` | 비밀번호 오류, 또는 계정 생성 시 Auto Confirm 누락 | Supabase → Authentication → Users에서 계정 확인. 3장 |
-| `서버에 연결할 수 없습니다` | Supabase 프로젝트 일시정지. 무료 플랜은 7일 무사용 시 자동 정지 | 대시보드에서 Resume. 공개 사이트는 영향 없음 |
+| `서버에 연결할 수 없습니다` | Supabase 프로젝트 일시정지 | [대시보드](https://supabase.com/dashboard/project/bebtbbhlakjlnhzeeaol)에서 Restore project. 몇 분 걸리며 데이터는 그대로입니다. 공개 사이트는 영향 없음 |
 | `시도가 너무 많습니다` | 로그인 실패 누적으로 일시 차단 | 몇 분 뒤 재시도 |
 | `CMS 사용 권한이 등록되지 않은 계정입니다` | 계정은 있으나 `cms_profiles`에 없음 | 3장 2단계 SQL 실행 |
 | `… 다른 곳에서 먼저 수정되었습니다` | 편집 중 다른 사람이나 다른 탭이 같은 파일을 저장 | Reload 후 다시 편집. 덮어쓰기는 일어나지 않음 |
@@ -293,6 +293,21 @@ git push origin main
 - [ ] GitHub 조직 `kist-pier` 저장소 write 권한
 - [ ] CMS 관리자 계정(3장)
 
+### Supabase 담당자 교체
+
+Supabase 로그인은 GitHub 계정에 묶여 있고, 한 계정의 GitHub 연결만 다른 사람 것으로 바꿀 수는
+없습니다. 계정을 넘기는 대신 사람을 교체합니다. 순서를 지키지 않으면 마지막 Owner가 떠나는 순간
+프로젝트에 아무도 들어갈 수 없게 됩니다.
+
+1. 후임자가 자기 GitHub 계정으로 [supabase.com](https://supabase.com)에 가입
+2. 현 Owner가 Organization → Team → Invite member, 역할 **Owner**로 초대
+3. 후임자가 초대를 수락하고 프로젝트가 보이는지 확인
+4. 그 다음에 전임자가 Team에서 자신을 제거하거나 Leave team
+
+Owner는 항상 2명 이상 유지하십시오. GitHub App(App ID `4858390`)은 개인이 아니라 `kist-pier`
+조직 소유이므로, 사람이 바뀌어도 CMS는 끊기지 않습니다. 전임자가 GitHub 조직에서도 나간다면
+저장소 write 권한과 CMS 계정(3장 권한 회수)도 함께 정리합니다.
+
 ### 인계 값
 
 | 항목 | 값 또는 위치 | 비밀 |
@@ -307,7 +322,8 @@ git push origin main
 
 ### 정기 확인
 
-- Supabase 무료 플랜은 7일 무사용 시 정지됩니다. 사용 빈도가 낮으면 keep-alive 작업을 걸거나 Pro($25/월)를 검토하십시오
+- Supabase 무료 플랜은 7일 무사용 시 정지됩니다. `Supabase keep-alive` 워크플로가 3일마다 `cms_heartbeat()`를 호출해 이를 막습니다. [Actions](https://github.com/kist-pier/kist-pier.github.io/actions/workflows/supabase-keepalive.yml)에서 실패가 쌓이지 않는지 가끔 확인하십시오
+- GitHub는 저장소에 60일간 커밋이 없으면 예약 워크플로를 자동 비활성화하고 관리자에게 메일을 보냅니다. 그때는 Actions 탭에서 다시 켭니다
 - GitHub App은 만료가 없습니다. 담당자가 바뀌어도 끊기지 않습니다
 - Auth 최소 비밀번호 12자 설정 유지(Authentication → Sign In / Providers → Email)
 
