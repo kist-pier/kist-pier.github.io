@@ -4,7 +4,7 @@ pier-lab.kr은 Jekyll로 빌드해 GitHub Pages에서 서비스하는 정적 사
 고치고, Supabase Edge Function이 GitHub에 대신 커밋합니다. 나머지는 저장소를 직접 고칩니다.
 모든 수정은 git 커밋이고, 실제 사이트 반영까지 3~5분 걸립니다.
 
-| | |
+| 항목 | 주소 |
 |---|---|
 | 공개 사이트 | https://pier-lab.kr |
 | 관리자 화면 | https://pier-lab.kr/admin/ |
@@ -35,6 +35,7 @@ pier-lab.kr은 Jekyll로 빌드해 GitHub Pages에서 서비스하는 정적 사
 | `서버에 연결할 수 없습니다` | Supabase 프로젝트 일시정지 | [대시보드](https://supabase.com/dashboard/project/bebtbbhlakjlnhzeeaol)에서 Restore project. 몇 분 걸리며 데이터는 그대로입니다. 공개 사이트는 영향 없음 |
 | `시도가 너무 많습니다` | 로그인 실패 누적으로 일시 차단 | 몇 분 뒤 재시도 |
 | `CMS 사용 권한이 등록되지 않은 계정입니다` | 계정은 있으나 `cms_profiles`에 없음 | 3장 2단계 SQL 실행 |
+| `이 계정에 연결된 멤버 프로필이 없습니다` | `cms_profiles`에는 있으나 `role`이 `member`이고 `member_id`가 비어 있음 | Table Editor에서 `member_id`를 채우거나, 관리자로 쓸 계정이면 `role`을 `admin`으로. 3장 |
 | `… 다른 곳에서 먼저 수정되었습니다` | 편집 중 다른 사람이나 다른 탭이 같은 파일을 저장 | Reload 후 다시 편집. 덮어쓰기는 일어나지 않음 |
 | `콘텐츠 파일을 찾을 수 없습니다` | 파일이 없거나 GitHub App 권한 문제 | 저장소에 해당 파일이 있는지 먼저 확인 |
 | `파일 용량이 너무 큽니다` | 사진 600KB / CV 4MB 초과 | 사진은 자동 축소되므로 대개 CV. PDF를 줄여 재시도 |
@@ -67,6 +68,24 @@ limit 50;
 ```
 
 감사 로그 기록이 실패해도 저장은 진행되므로 누락될 수 있습니다. 권위 있는 기록은 git 이력입니다.
+
+### Supabase에서 데이터베이스 직접 보기
+
+[대시보드](https://supabase.com/dashboard/project/bebtbbhlakjlnhzeeaol) 왼쪽 사이드바에서 찾는 것이 네 군데로 나뉩니다.
+
+| 보려는 것 | 메뉴 |
+|---|---|
+| `cms_profiles`, `cms_audit_logs`의 행 | Table Editor. 엑셀처럼 보이고 셀을 눌러 바로 고칠 수 있습니다 |
+| 쿼리 직접 실행 | SQL Editor |
+| `cms_heartbeat()` 같은 함수 | Database → Functions. 함수는 표가 아니라 여기 있습니다 |
+| 로그인 계정, 비밀번호 재설정 | Authentication → Users |
+
+사이드바의 Edge Functions는 완전히 다른 것입니다. CMS 서버 코드가 있는 곳이고, 데이터베이스 함수는
+없습니다.
+
+`cms_profiles`에 RLS가 걸려 있지만 대시보드는 관리자 권한으로 접속하므로 행이 모두 보입니다.
+표가 비어 보인다면 화면 오른쪽 위의 역할(role) 선택이 `anon`이나 `authenticated`로 바뀐 것입니다.
+그 상태에서는 대시보드도 RLS를 따르므로 아무것도 안 나옵니다. 기본값으로 되돌린 뒤 판단하십시오.
 
 ---
 
