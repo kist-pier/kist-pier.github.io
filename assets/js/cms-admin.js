@@ -113,6 +113,13 @@
     piSave: document.getElementById("pi-save"),
     piReload: document.getElementById("pi-reload"),
     tabs: document.getElementById("cms-tabs"),
+    memberImage: document.getElementById("member-image"),
+    memberPhotoPreview: document.getElementById("member-photo-preview"),
+    memberPhotoEmpty: document.getElementById("member-photo-empty"),
+    memberPhotoLabel: document.getElementById("member-photo-label"),
+    memberPhotoPick: document.getElementById("member-photo-pick"),
+    memberCvLabel: document.getElementById("member-cv-label"),
+    memberCvPick: document.getElementById("member-cv-pick"),
     readOnlyBanner: document.getElementById("cms-readonly-banner"),
     readOnlyProfileHint: document.getElementById("readonly-profile-hint"),
   };
@@ -571,11 +578,29 @@
     if (field) field.value = value || "";
   }
 
+  function setProfileEnabled(enabled) {
+    // The photo and CV pickers live outside the form, so this is scoped to the whole panel.
+    elements.memberEditor.querySelectorAll("input, textarea, button")
+      .forEach((node) => { node.disabled = !enabled; });
+    // The CV box is filled by upload, never typed: the server only accepts this member's own
+    // generated filename, so a hand-typed path would just be rejected.
+    elements.memberForm.elements.namedItem("cv").readOnly = true;
+  }
+
+  function showMemberPhoto(path) {
+    elements.memberImage.value = path || "";
+    // Cache-bust: the filename never changes, so a re-upload would otherwise show the old photo.
+    elements.memberPhotoPreview.src = path ? `${path}?v=${Date.now()}` : "";
+    elements.memberPhotoPreview.hidden = !path;
+    elements.memberPhotoEmpty.hidden = Boolean(path);
+  }
+
   async function loadMemberProfile() {
     try {
       const data = await invoke({ action: "member.read" });
       memberSha = data.sha;
       const member = data.member;
+      showMemberPhoto(member.image);
       setFormValue("name_en", member.name_en);
       setFormValue("name_ko", member.name_ko);
       setFormValue("email", member.email);
@@ -586,9 +611,10 @@
       setFormValue("education", lines(member.education));
       setFormValue("research_areas", lines(member.research_areas));
       setFormValue("bio", member.bio);
+      setProfileEnabled(true);
     } catch (error) {
       showStatus(error.message, "error");
-      elements.memberForm.querySelectorAll("input, textarea, button").forEach((node) => { node.disabled = true; });
+      setProfileEnabled(false);
     }
   }
 
@@ -2194,12 +2220,48 @@
     }
   });
 
+  function chosenUpload(input) {
+    const file = input.files && input.files[0];
+    input.value = "";
+    return file || null;
+  }
+
+  elements.memberPhotoPick.addEventListener("change", () => {
+    const file = chosenUpload(elements.memberPhotoPick);
+    if (!file) return;
+    withUpload(elements.memberPhotoLabel, "사진을 올리는 중입니다…", async () => {
+      const dataUrl = await resizeToJpeg(file);
+      const data = await invoke({
+        action: "member.image",
+        content_base64: dataUrl.split(",")[1],
+      });
+      showMemberPhoto(data.image);
+      elements.memberPhotoPreview.src = dataUrl;
+      dirty = true;
+      return "사진을 저장소에 올렸습니다. 프로필에 연결하려면 아래 Save를 눌러 주세요.";
+    });
+  });
+
+  elements.memberCvPick.addEventListener("change", () => {
+    const file = chosenUpload(elements.memberCvPick);
+    if (!file) return;
+    withUpload(elements.memberCvLabel, "CV를 올리는 중입니다…", async () => {
+      const data = await invoke({
+        action: "member.cv",
+        content_base64: await fileToBase64(file),
+      });
+      setFormValue("cv", data.cv);
+      dirty = true;
+      return "CV를 저장소에 올렸습니다. 프로필에 연결하려면 아래 Save를 눌러 주세요.";
+    });
+  });
+
   elements.memberForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const button = event.submitter;
     const formData = new FormData(elements.memberForm);
     const lineValues = (name) => String(formData.get(name) || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-    const fields = Object.fromEntries(["name_en", "name_ko", "email", "github", "cv", "website", "affiliation", "bio"].map((name) => [name, String(formData.get(name) || "").trim()]));
+    const fields = Object.fromEntries(["name_en", "name_ko", "email", "github", "image", "cv", "website", "affiliation", "bio"].map((name) => [name, String(formData.get(name) || "").trim()]));
     fields.education = lineValues("education");
     fields.research_areas = lineValues("research_areas");
     setBusy(button, true, "Saving…");

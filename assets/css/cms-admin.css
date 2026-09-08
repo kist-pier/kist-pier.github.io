@@ -185,6 +185,13 @@ textarea { line-height: 1.55; resize: vertical; }
 .notice-demo dt { color: var(--muted); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
 .notice-demo dd { margin: 0; }
 
+.member-self-media { align-items: center; display: flex; gap: 20px; margin: 0 0 22px; }
+.member-self-hint { color: var(--muted); font-size: .82rem; line-height: 1.6; margin: 0; }
+
+@media (max-width: 850px) {
+  .member-self-media { align-items: flex-start; flex-direction: column; gap: 14px; }
+}
+
 .notice-readonly { background: #fdf6e7; border-left-color: var(--warning); color: var(--ink); font-size: .88rem; margin: 20px 0; }
 
 /* A locked screen has to look locked, or a member reads a disabled Save as a broken Save. */

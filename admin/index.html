@@ -327,7 +327,17 @@ sitemap: false
               <p>본인 프로필의 공개 정보만 수정할 수 있습니다. 소속 구분과 권한은 관리자가 변경합니다.</p>
             </div>
           </div>
+          <div class="member-self-media">
+            <div class="member-edit-photo">
+              <img id="member-photo-preview" class="member-edit-preview" alt="" hidden>
+              <div id="member-photo-empty" class="member-edit-nophoto">사진 없음</div>
+              <label id="member-photo-label" class="button button-secondary member-edit-pick">사진 올리기<input id="member-photo-pick" type="file" accept="image/*" hidden></label>
+            </div>
+            <p class="member-self-hint">사진은 600×600 JPEG로 자동 축소되어 올라갑니다. 올린 뒤 아래 <strong>Save &amp; publish</strong>를 눌러야 프로필에 반영됩니다.</p>
+          </div>
+
           <form id="member-form" class="form-grid">
+            <input id="member-image" name="image" type="hidden">
             <div>
               <label for="member-name-en">English name</label>
               <input id="member-name-en" name="name_en" type="text" required>
@@ -344,9 +354,12 @@ sitemap: false
               <label for="member-github">GitHub URL</label>
               <input id="member-github" name="github" type="url" placeholder="https://github.com/...">
             </div>
-            <div>
-              <label for="member-cv">CV path or URL</label>
-              <input id="member-cv" name="cv" type="text" placeholder="/assets/pdf/name_cv.pdf">
+            <div class="member-edit-cv">
+              <div>
+                <label for="member-cv">CV (PDF)</label>
+                <input id="member-cv" name="cv" type="text" placeholder="아직 올린 CV가 없습니다" readonly>
+              </div>
+              <label id="member-cv-label" class="button button-secondary member-edit-pick">PDF 올리기<input id="member-cv-pick" type="file" accept="application/pdf" hidden></label>
             </div>
             <div>
               <label for="member-website">Website URL</label>

@@ -91,6 +91,7 @@ const MEMBER_FIELDS = [
   "name_ko",
   "email",
   "github",
+  "image",
   "cv",
   "website",
   "affiliation",
@@ -98,6 +99,19 @@ const MEMBER_FIELDS = [
   "research_areas",
   "bio",
 ] as const;
+
+// Written only when non-empty, and removed when cleared, so a member who deletes their photo does
+// not leave `image: ""` behind — Liquid treats "" as truthy and would render an empty <img>.
+const MEMBER_SELF_OPTIONAL_FIELDS = new Set([
+  "image",
+  "cv",
+  "affiliation",
+  "github",
+  // Neither is on the admin path, so nothing else ever writes or clears these two. Without them
+  // here, a member's first save appends `bio: ""` to their entry and the diff hides the real edit.
+  "website",
+  "bio",
+]);
 
 const ARRAY_MEMBER_FIELDS = new Set(["education", "research_areas"]);
 const URL_MEMBER_FIELDS = new Set(["github", "website"]);
@@ -550,8 +564,28 @@ function safeCv(value: unknown): string {
   return remote;
 }
 
+function safeOwnAsset(
+  value: unknown,
+  memberId: string,
+  kind: "image" | "cv",
+): string {
+  const label = kind === "image" ? "사진" : "CV";
+  const normalized = safePlainText(value, label, 200);
+  if (!normalized) return "";
+  const own = kind === "image"
+    ? `/${MEMBER_IMAGE_DIR}/${memberImageName(memberId)}`
+    : `/${MEMBER_CV_DIR}/${memberCvName(memberId)}`;
+  if (normalized !== own) {
+    // The upload action generates this path from the member's own id, so a mismatch means the
+    // value did not come from an upload on this account.
+    throw new HttpError(400, `${label} 경로가 올바르지 않습니다.`);
+  }
+  return normalized;
+}
+
 function normalizeMemberFields(
   value: unknown,
+  memberId: string,
 ): Record<string, string | string[]> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new HttpError(400, "프로필 데이터가 올바르지 않습니다.");
@@ -576,8 +610,8 @@ function normalizeMemberFields(
       );
     } else if (URL_MEMBER_FIELDS.has(field)) {
       result[field] = safeUrl(raw, field);
-    } else if (field === "cv") {
-      result[field] = safeCv(raw);
+    } else if (field === "image" || field === "cv") {
+      result[field] = safeOwnAsset(raw, memberId, field);
     } else {
       result[field] = safePlainText(raw, field, field === "bio" ? 3000 : 500);
     }
@@ -2526,16 +2560,62 @@ async function handleAction(
     return { member: editable, member_id: profile.member_id, sha: file.sha };
   }
 
+  if (action === "member.image" || action === "member.cv") {
+    const memberId = profile.member_id;
+    if (!memberId) {
+      throw new HttpError(403, "이 계정에 연결된 멤버 프로필이 없습니다.");
+    }
+    await memberFile(profile);
+    const isCv = action === "member.cv";
+    const { base64, bytes } = decodeUpload(
+      body.content_base64,
+      isCv ? MAX_MEMBER_CV_BYTES : MAX_MEMBER_IMAGE_BYTES,
+    );
+    const ok = isCv
+      ? hasSignature(bytes, [0x25, 0x50, 0x44, 0x46])
+      : hasSignature(bytes, [0xff, 0xd8, 0xff]);
+    if (!ok) {
+      throw new HttpError(
+        400,
+        isCv
+          ? "PDF 파일만 올릴 수 있습니다."
+          : "JPEG 이미지만 올릴 수 있습니다.",
+      );
+    }
+    const path = isCv
+      ? `${MEMBER_CV_DIR}/${memberCvName(memberId)}`
+      : `${MEMBER_IMAGE_DIR}/${memberImageName(memberId)}`;
+    const saved = await putGitHubFile(
+      path,
+      base64,
+      `cms: update ${isCv ? "CV" : "photo"} for ${memberId}`,
+      await existingFileSha(path),
+      commitAuthor(profile),
+    );
+    await audit(profile, action, path, saved.commit_sha, {
+      member_id: memberId,
+    });
+    return isCv
+      ? { ...saved, cv: `/${path}` }
+      : { ...saved, image: `/${path}` };
+  }
+
   if (action === "member.save") {
     if (typeof body.sha !== "string") {
       throw new HttpError(400, "프로필 revision이 없습니다.");
     }
-    const fields = normalizeMemberFields(body.fields);
+    const fields = normalizeMemberFields(body.fields, profile.member_id ?? "");
     const { file, document, memberPath } = await memberFile(profile);
     if (file.sha !== body.sha) {
       throw new HttpError(409, "프로필이 다른 곳에서 먼저 수정되었습니다.");
     }
     for (const [field, value] of Object.entries(fields)) {
+      if (MEMBER_SELF_OPTIONAL_FIELDS.has(field) && !value) {
+        if (document.hasIn([...memberPath, field])) {
+          document.deleteIn([...memberPath, field]);
+        }
+        continue;
+      }
       document.setIn([...memberPath, field], yamlFieldValue(field, value));
     }
     const content = document.toString(YAML_OUTPUT);
