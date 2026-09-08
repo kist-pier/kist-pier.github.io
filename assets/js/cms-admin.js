@@ -113,6 +113,8 @@
     piSave: document.getElementById("pi-save"),
     piReload: document.getElementById("pi-reload"),
     tabs: document.getElementById("cms-tabs"),
+    readOnlyBanner: document.getElementById("cms-readonly-banner"),
+    readOnlyProfileHint: document.getElementById("readonly-profile-hint"),
   };
 
   // The sidebar lists groups; a group with more than one screen shows them as tabs, so the
@@ -371,6 +373,44 @@
     }));
   }
 
+  // A member sees every screen an admin sees, with the controls locked. The server is what actually
+  // refuses a member's write — every action that commits still calls requireAdmin — so this is about
+  // making the UI say what is true, not about enforcement.
+  function readOnlyMode() {
+    return Boolean(profile) && profile.role !== "admin";
+  }
+
+  function lockPanel(panel) {
+    panel.querySelectorAll("input, textarea").forEach((node) => {
+      if (node.type === "checkbox" || node.type === "radio" || node.type === "file") {
+        node.disabled = true;
+      } else if (!node.readOnly) {
+        // readOnly rather than disabled: the text stays selectable so a member can copy the part
+        // they want changed into a message to the admin.
+        node.readOnly = true;
+      }
+    });
+    panel.querySelectorAll("select, button").forEach((node) => {
+      if (node.dataset.viewOk === undefined && !node.disabled) node.disabled = true;
+    });
+  }
+
+  // Panels re-render whenever a screen loads, so locking once is not enough. Observing #cms-app
+  // means any editor added later is locked by default rather than by remembering to call this.
+  function lockViews() {
+    if (!readOnlyMode()) return;
+    elements.app.querySelectorAll(".panel").forEach((panel) => {
+      if (panel === elements.memberEditor) return;
+      panel.classList.add("panel-readonly");
+      lockPanel(panel);
+    });
+  }
+
+  function watchReadOnly() {
+    new MutationObserver(lockViews)
+      .observe(elements.app, { childList: true, subtree: true });
+  }
+
   function showView(view) {
     const target = panelFor(view);
     [
@@ -380,8 +420,9 @@
     ].forEach((node) => { node.hidden = node !== target; });
 
     const group = groupFor(view);
+    const activeLabel = view === "profile" ? "My profile" : group && group.label;
     document.querySelectorAll(".nav-button").forEach((button) => {
-      button.classList.toggle("active", Boolean(group) && button.dataset.group === group.label);
+      button.classList.toggle("active", Boolean(activeLabel) && button.dataset.group === activeLabel);
     });
     renderTabs(view);
 
@@ -390,6 +431,9 @@
     elements.workspaceTitle.textContent =
       titles[view] || (tab ? tab.label : "Content");
     showStatus("");
+
+    elements.readOnlyBanner.hidden = !readOnlyMode() || view === "profile";
+    lockViews();
   }
 
   // Each screen fetches its data on first visit rather than at sign-in.
@@ -443,25 +487,35 @@
   }
 
   function renderNavigation() {
-    const groups = profile.role === "admin" ? NAV_GROUPS : [];
-    const buttons = groups.map((group, index) => {
+    // Members get the same menu; the screens behind it open read-only.
+    const buttons = NAV_GROUPS.map((group) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `nav-button${index === 0 ? " active" : ""}`;
+      button.className = "nav-button";
       button.dataset.group = group.label;
       button.textContent = group.label;
       button.addEventListener("click", () => activate(group.tabs[0].key));
       return button;
     });
+
     if (profile.member_id) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "nav-button";
       button.dataset.group = "My profile";
       button.textContent = "My profile";
-      button.addEventListener("click", () => showView("profile"));
-      buttons.push(button);
+      button.addEventListener("click", () => {
+        if (!confirmDiscard()) return;
+        showView("profile");
+        // The first load happens at sign-in; retry here so a transient failure is not permanent.
+        if (!memberSha) loadMemberProfile();
+      });
+      // The one screen a member can actually change belongs at the top. An admin who also has a
+      // linked profile keeps it last, because their landing screen is Members.
+      if (profile.role === "admin") buttons.push(button);
+      else buttons.unshift(button);
     }
+
     elements.navigation.replaceChildren(...buttons);
   }
 
@@ -1419,6 +1473,7 @@
     edit.type = "button";
     edit.className = "button button-secondary";
     edit.textContent = "Edit";
+    edit.dataset.viewOk = "";
     edit.addEventListener("click", () => openPub(entry.key));
     const remove = document.createElement("button");
     remove.type = "button";
@@ -1827,6 +1882,7 @@
     edit.type = "button";
     edit.className = "button button-secondary";
     edit.textContent = "Edit";
+    edit.dataset.viewOk = "";
     edit.addEventListener("click", () => openNews(item));
     const remove = document.createElement("button");
     remove.type = "button";
@@ -1945,15 +2001,23 @@
       elements.login.hidden = true;
       elements.app.hidden = false;
 
+      renderResourceOptions();
+      elements.readOnlyProfileHint.hidden = !profile.member_id;
+
       if (profile.role === "admin") {
-        renderResourceOptions();
         showView("members");
         await loadMembers();
         renderTabs("members");
       } else if (profile.member_id) {
         showView("profile");
       } else {
-        throw new Error("이 계정에 연결된 멤버 프로필이 없습니다. 관리자에게 문의해 주세요.");
+        // A member without a linked profile is still a reader. Open the first screen rather than
+        // refusing the sign-in, and say why there is no My profile tab.
+        activate(NAV_GROUPS[0].tabs[0].key);
+        showStatus(
+          "연결된 멤버 프로필이 없어 보기만 할 수 있습니다. 본인 프로필을 수정하려면 관리자에게 요청해 주세요.",
+          "info",
+        );
       }
       if (profile.member_id) await loadMemberProfile();
     } catch (error) {
@@ -2143,6 +2207,7 @@
     try {
       const data = await invoke({ action: "member.save", fields, sha: memberSha });
       memberSha = data.sha;
+      markClean();
       showStatus("프로필을 저장했습니다. 배포 후 Members 페이지에 반영됩니다.", "success");
     } catch (error) {
       const message = error.status === 409
@@ -2225,6 +2290,7 @@
   }
 
   watchEdits();
+  watchReadOnly();
 
   start().catch((error) => {
     elements.setupNotice.hidden = false;

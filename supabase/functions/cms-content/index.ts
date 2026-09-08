@@ -1479,6 +1479,17 @@ function requireAdmin(profile: CmsProfile): void {
   }
 }
 
+// Members may open every content screen read-only, so they can see what needs fixing and ask an
+// admin to fix it. This grants no new access to information: the repository is public, so every
+// file these actions return is already world-readable at github.com/kist-pier/kist-pier.github.io.
+// Only the read actions call this; every action that writes still calls requireAdmin, which is what
+// makes the read-only screens safe against a tampered browser rather than merely disabled inputs.
+function requireReader(profile: CmsProfile): void {
+  if (profile.role !== "admin" && profile.role !== "member") {
+    throw new HttpError(403, "CMS 사용 권한이 없습니다.");
+  }
+}
+
 async function audit(
   profile: CmsProfile,
   action: string,
@@ -1561,15 +1572,14 @@ async function handleAction(
   const action = body.action;
 
   if (action === "me") {
-    const news = profile.role === "admin" ? await listNewsResources() : [];
-    return {
-      profile,
-      resources: profile.role === "admin" ? [...STATIC_RESOURCES, ...news] : [],
-    };
+    // Members get the same list: they can open these files read-only, and the list itself is just
+    // repository paths that are public anyway.
+    const news = await listNewsResources();
+    return { profile, resources: [...STATIC_RESOURCES, ...news] };
   }
 
   if (action === "admin.read") {
-    requireAdmin(profile);
+    requireReader(profile);
     const resource = resolveResource(body.resource_id);
     return await readGitHubFile(resource.path);
   }
@@ -1658,7 +1668,7 @@ async function handleAction(
   }
 
   if (action === "admin.members.read") {
-    requireAdmin(profile);
+    requireReader(profile);
     const file = await readGitHubFile("_data/members.yml");
     const document = parseDocument(file.content, { keepSourceTokens: true });
     if (document.errors.length) {
@@ -1829,7 +1839,7 @@ async function handleAction(
   }
 
   if (action === "admin.pi.read") {
-    requireAdmin(profile);
+    requireReader(profile);
     const file = await readGitHubFile("_data/members.yml");
     const document = parseDocument(file.content, { keepSourceTokens: true });
     if (document.errors.length) {
@@ -1969,7 +1979,7 @@ async function handleAction(
   }
 
   if (action === "admin.data.read") {
-    requireAdmin(profile);
+    requireReader(profile);
     const [id, collection] = resolveCollection(body.collection);
     const file = await readGitHubFile(collection.path);
     const document = parseDocument(file.content, { keepSourceTokens: true });
@@ -2092,7 +2102,7 @@ async function handleAction(
   }
 
   if (action === "admin.pubs.read") {
-    requireAdmin(profile);
+    requireReader(profile);
     const file = await readGitHubFile("_bibliography/papers.bib");
     const blocks = parseBibtex(file.content);
     return {
@@ -2268,7 +2278,7 @@ async function handleAction(
   }
 
   if (action === "admin.gallery.read") {
-    requireAdmin(profile);
+    requireReader(profile);
     const file = await readGitHubFile("_data/gallery.yml");
     const document = parseDocument(file.content, { keepSourceTokens: true });
     if (document.errors.length) {
@@ -2394,7 +2404,7 @@ async function handleAction(
   }
 
   if (action === "admin.news.list") {
-    requireAdmin(profile);
+    requireReader(profile);
     const items = (await listNewsResources()).map((resource) => {
       const match = resource.label.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.md$/);
       return {
@@ -2409,7 +2419,7 @@ async function handleAction(
   }
 
   if (action === "admin.news.item") {
-    requireAdmin(profile);
+    requireReader(profile);
     const { path, name } = newsPathFromId(body.resource_id);
     const file = await readGitHubFile(path);
     const { front, body: text } = parseNews(file.content);

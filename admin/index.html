@@ -93,6 +93,10 @@ sitemap: false
           <strong>Local demo mode</strong> — 저장 내용은 이 브라우저에만 임시 보관되며 GitHub 또는 운영 홈페이지에는 게시되지 않습니다.
         </div>
 
+        <div id="cms-readonly-banner" class="notice notice-readonly" hidden>
+          <strong>읽기 전용</strong> — 이 화면은 보기만 할 수 있습니다. 고쳐야 할 내용이 있으면 관리자에게 알려 주세요.<span id="readonly-profile-hint"> 본인 프로필은 왼쪽 <strong>My profile</strong>에서 직접 수정할 수 있습니다.</span>
+        </div>
+
         <div id="cms-tabs" class="cms-tabs" role="tablist" hidden></div>
 
         <div id="global-status" class="notice" role="status" aria-live="polite" hidden></div>
@@ -103,10 +107,10 @@ sitemap: false
               <h2>Website content</h2>
               <p>저장하면 GitHub에 커밋되고 홈페이지가 자동으로 다시 배포됩니다.</p>
             </div>
-            <button id="reload-resource" class="button button-secondary" type="button">Reload</button>
+            <button id="reload-resource" data-view-ok class="button button-secondary" type="button">Reload</button>
           </div>
           <label for="resource-select">편집할 콘텐츠</label>
-          <select id="resource-select"></select>
+          <select id="resource-select" data-view-ok></select>
           <div class="editor-meta">
             <code id="resource-path"></code>
             <span id="resource-sha"></span>
@@ -124,7 +128,7 @@ sitemap: false
               <h2>Members</h2>
               <p>각 칸을 채워 수정합니다. 저장하면 GitHub에 커밋되고 홈페이지가 자동으로 다시 배포됩니다.</p>
             </div>
-            <button id="members-reload" class="button button-secondary" type="button">Reload</button>
+            <button id="members-reload" data-view-ok class="button button-secondary" type="button">Reload</button>
           </div>
           <div class="editor-meta">
             <code>_data/members.yml</code>
@@ -145,7 +149,7 @@ sitemap: false
               <h2>Advisor (PI)</h2>
               <p>지도교수 소개 페이지(/people/advisor/)의 내용을 수정합니다.</p>
             </div>
-            <button id="pi-reload" class="button button-secondary" type="button">Reload</button>
+            <button id="pi-reload" data-view-ok class="button button-secondary" type="button">Reload</button>
           </div>
           <div class="editor-meta">
             <code>_data/members.yml → pi</code>
@@ -164,7 +168,7 @@ sitemap: false
               <p id="data-count">불러오는 중…</p>
             </div>
             <div class="panel-actions">
-              <button id="data-reload" class="button button-secondary" type="button">Reload</button>
+              <button id="data-reload" data-view-ok class="button button-secondary" type="button">Reload</button>
               <button id="data-add" class="button button-primary" type="button">+ 항목 추가</button>
             </div>
           </div>
@@ -186,7 +190,7 @@ sitemap: false
                 <p id="pubs-count">불러오는 중…</p>
               </div>
               <div class="panel-actions">
-                <button id="pubs-reload" class="button button-secondary" type="button">Reload</button>
+                <button id="pubs-reload" data-view-ok class="button button-secondary" type="button">Reload</button>
                 <button id="pubs-new" class="button button-primary" type="button">New item</button>
               </div>
             </div>
@@ -203,7 +207,7 @@ sitemap: false
                 <h2 id="pubs-edit-title">Publication</h2>
                 <p>Google Scholar의 BibTeX를 붙여넣으면 아래 칸이 한 번에 채워집니다.</p>
               </div>
-              <button id="pubs-edit-back" class="button button-secondary" type="button">← 목록으로</button>
+              <button id="pubs-edit-back" data-view-ok class="button button-secondary" type="button">← 목록으로</button>
             </div>
             <details class="pubs-bibtex">
               <summary>BibTeX 붙여넣기</summary>
@@ -224,7 +228,7 @@ sitemap: false
               <p id="gallery-count">불러오는 중…</p>
             </div>
             <div class="panel-actions">
-              <button id="gallery-reload" class="button button-secondary" type="button">Reload</button>
+              <button id="gallery-reload" data-view-ok class="button button-secondary" type="button">Reload</button>
               <label class="button button-primary" id="gallery-add">사진 추가<input id="gallery-file" type="file" accept="image/*" multiple hidden></label>
             </div>
           </div>
@@ -247,7 +251,7 @@ sitemap: false
                 <p id="news-count">불러오는 중…</p>
               </div>
               <div class="panel-actions">
-                <button id="news-reload" class="button button-secondary" type="button">Reload</button>
+                <button id="news-reload" data-view-ok class="button button-secondary" type="button">Reload</button>
                 <button id="news-new" class="button button-primary" type="button">New item</button>
               </div>
             </div>
@@ -263,7 +267,7 @@ sitemap: false
                   <span id="news-edit-sha"></span>
                 </div>
               </div>
-              <button id="news-edit-back" class="button button-secondary" type="button">← 목록으로</button>
+              <button id="news-edit-back" data-view-ok class="button button-secondary" type="button">← 목록으로</button>
             </div>
             <div class="form-grid">
               <div>
@@ -291,7 +295,7 @@ sitemap: false
               <h2>New News item</h2>
               <p>날짜와 영문 slug로 새 News 파일을 만듭니다.</p>
             </div>
-            <button id="news-create-back" class="button button-secondary" type="button">← 목록으로</button>
+            <button id="news-create-back" data-view-ok class="button button-secondary" type="button">← 목록으로</button>
           </div>
           <form id="news-form" class="form-grid">
             <div>

@@ -185,6 +185,12 @@ textarea { line-height: 1.55; resize: vertical; }
 .notice-demo dt { color: var(--muted); font-size: .75rem; font-weight: 800; text-transform: uppercase; }
 .notice-demo dd { margin: 0; }
 
+.notice-readonly { background: #fdf6e7; border-left-color: var(--warning); color: var(--ink); font-size: .88rem; margin: 20px 0; }
+
+/* A locked screen has to look locked, or a member reads a disabled Save as a broken Save. */
+.panel-readonly input[readonly], .panel-readonly textarea[readonly] { background: var(--canvas); color: var(--muted); cursor: default; }
+.panel-readonly button[disabled], .panel-readonly select[disabled] { opacity: .45; }
+
 .editor-meta { align-items: center; color: var(--muted); display: flex; font-size: .75rem; justify-content: space-between; margin: -10px 0 20px; }
 .source-editor { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 13px; min-height: 58vh; tab-size: 2; white-space: pre; }
 .form-actions { display: flex; justify-content: flex-end; }
