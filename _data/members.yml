@@ -112,7 +112,7 @@ research_interns:
     role: "Intern Researcher"
     image: /assets/img/members/jiyeon_joung.jpg
     education:
-      - "B.S. Department of Software, Sungkyunkwan University (Graduated: 2025)"
+      - "B.S. Department of Software, Sungkyunkwan University (Graduated: 2025/08)"
     research_areas:
       - "Imitation Learning"
       - "Quantization"
