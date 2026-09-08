@@ -66,7 +66,11 @@ nav_order: 5
       {% endfor %}
     </ul>
     {% endif %}
-    <a href="mailto:jang90@kist.re.kr" class="position-apply-btn">Apply</a>
+    {% if pos.apply_url and pos.apply_url != "" %}
+      <a href="{{ pos.apply_url | escape }}" target="_blank" rel="noopener noreferrer" class="position-apply-btn">Apply</a>
+    {% else %}
+      <a href="mailto:jang90@kist.re.kr?subject={{ pos.title | uri_escape }}" class="position-apply-btn">Apply by email</a>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

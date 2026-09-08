@@ -1167,6 +1167,13 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
         quoted: true,
         wide: true,
       },
+      {
+        name: "apply_url",
+        kind: "text",
+        label: "Apply 링크 (Google/Notion 폼 주소, 비우면 이메일로 연결)",
+        quoted: true,
+        wide: true,
+      },
       { name: "open", kind: "bool", label: "Currently open" },
     ],
   },
