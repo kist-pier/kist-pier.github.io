@@ -276,11 +276,25 @@ async function readGitHubFile(
   };
 }
 
+type CommitAuthor = { name: string; email: string };
+
+// GitHub records this as the commit author while the App remains the committer, so `git log` names
+// the person who made the change. The address is a project mailbox rather than the account's login
+// email, which is not necessarily one they want in a public history.
+const COMMIT_EMAIL = Deno.env.get("CMS_COMMIT_EMAIL")?.trim() ||
+  "cms@pier-lab.kr";
+
+function commitAuthor(profile: CmsProfile): CommitAuthor {
+  const name = (profile.display_name || profile.email || "PIER Lab CMS").trim();
+  return { name, email: COMMIT_EMAIL };
+}
+
 async function saveGitHubFile(
   path: string,
   content: string,
   message: string,
   sha?: string,
+  author?: CommitAuthor,
 ): Promise<{ sha: string; commit_sha: string; path: string }> {
   if (new TextEncoder().encode(content).byteLength > MAX_SOURCE_BYTES) {
     throw new HttpError(
@@ -288,7 +302,13 @@ async function saveGitHubFile(
       "한 번에 저장할 수 있는 콘텐츠 크기를 초과했습니다.",
     );
   }
-  return await putGitHubFile(path, encodeBase64Utf8(content), message, sha);
+  return await putGitHubFile(
+    path,
+    encodeBase64Utf8(content),
+    message,
+    sha,
+    author,
+  );
 }
 
 // Commits content that is already base64 — used for images, which must not be re-encoded.
@@ -297,14 +317,16 @@ async function putGitHubFile(
   base64: string,
   message: string,
   sha?: string,
+  author?: CommitAuthor,
 ): Promise<{ sha: string; commit_sha: string; path: string }> {
   const [owner, repository] = repositoryParts();
-  const payload: Record<string, string> = {
+  const payload: Record<string, unknown> = {
     message,
     content: base64,
     branch: BRANCH,
   };
   if (sha) payload.sha = sha;
+  if (author) payload.author = author;
   const data = await githubRequest(
     `/repos/${encodeURIComponent(owner)}/${
       encodeURIComponent(repository)
@@ -328,6 +350,7 @@ async function deleteGitHubFile(
   path: string,
   message: string,
   sha: string,
+  author?: CommitAuthor,
 ): Promise<{ commit_sha: string; path: string }> {
   const [owner, repository] = repositoryParts();
   const data = await githubRequest(
@@ -337,7 +360,7 @@ async function deleteGitHubFile(
     {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, sha, branch: BRANCH }),
+      body: JSON.stringify({ message, sha, branch: BRANCH, author }),
     },
   ) as { commit?: { sha?: string } };
   const commitSha = data.commit?.sha;
@@ -1562,6 +1585,7 @@ async function handleAction(
       body.content,
       `cms: update ${resource.label}`,
       body.sha,
+      commitAuthor(profile),
     );
     await audit(profile, "admin.save", resource.path, saved.commit_sha, {
       resource_id: resource.id,
@@ -1605,6 +1629,8 @@ async function handleAction(
       path,
       content,
       `cms: add news ${date}-${slug}`,
+      undefined,
+      commitAuthor(profile),
     );
     await audit(profile, "admin.news.create", path, saved.commit_sha);
     return {
@@ -1739,6 +1765,7 @@ async function handleAction(
       document.toString(YAML_OUTPUT),
       "cms: update members",
       file.sha,
+      commitAuthor(profile),
     );
     await audit(
       profile,
@@ -1778,6 +1805,7 @@ async function handleAction(
       base64,
       `cms: update ${isCv ? "CV" : "photo"} for ${memberId}`,
       await existingFileSha(path),
+      commitAuthor(profile),
     );
     await audit(profile, action, path, saved.commit_sha, {
       member_id: memberId,
@@ -1914,6 +1942,7 @@ async function handleAction(
       document.toString(YAML_OUTPUT),
       "cms: update PI profile",
       file.sha,
+      commitAuthor(profile),
     );
     await audit(
       profile,
@@ -1998,6 +2027,7 @@ async function handleAction(
       document.toString(collection.output ?? DATA_YAML_OUTPUT),
       `cms: update ${collection.label.toLowerCase()}`,
       file.sha,
+      commitAuthor(profile),
     );
     await audit(profile, "admin.data.save", collection.path, saved.commit_sha, {
       total: items.length,
@@ -2027,6 +2057,7 @@ async function handleAction(
       base64,
       `cms: update ${collection.label.toLowerCase()} photo ${slug}`,
       await existingFileSha(path),
+      commitAuthor(profile),
     );
     await audit(profile, "admin.data.image", path, saved.commit_sha);
     return { ...saved, image: `/${path}` };
@@ -2192,6 +2223,7 @@ async function handleAction(
       serializeBibtex(blocks),
       "cms: update publications",
       file.sha,
+      commitAuthor(profile),
     );
     await audit(
       profile,
@@ -2284,6 +2316,7 @@ async function handleAction(
       document.toString(YAML_OUTPUT),
       "cms: update gallery",
       file.sha,
+      commitAuthor(profile),
     );
     await audit(
       profile,
@@ -2326,6 +2359,7 @@ async function handleAction(
       base64,
       `cms: add gallery photo ${date}`,
       await existingFileSha(path),
+      commitAuthor(profile),
     );
     await audit(profile, "admin.gallery.image", path, saved.commit_sha);
     return { ...saved, image: `/${path}` };
@@ -2389,6 +2423,7 @@ async function handleAction(
       content,
       `cms: update news ${name}`,
       file.sha,
+      commitAuthor(profile),
     );
     await audit(profile, "admin.news.update", path, saved.commit_sha);
     return saved;
@@ -2402,6 +2437,7 @@ async function handleAction(
       path,
       `cms: remove news ${name}`,
       file.sha,
+      commitAuthor(profile),
     );
     await audit(profile, "admin.news.remove", path, removed.commit_sha);
     return removed;
@@ -2438,6 +2474,7 @@ async function handleAction(
       content,
       `cms: update member ${profile.member_id}`,
       file.sha,
+      commitAuthor(profile),
     );
     await audit(profile, "member.save", "_data/members.yml", saved.commit_sha, {
       member_id: profile.member_id,

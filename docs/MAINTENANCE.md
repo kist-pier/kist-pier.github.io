@@ -1,120 +1,110 @@
-# PIER Lab 홈페이지 유지보수 가이드
+# PIER Lab 홈페이지 유지보수
 
-이 문서 하나만 읽으면 홈페이지를 넘겨받을 수 있도록 쓴 인수인계 문서입니다.
-웹 개발을 몰라도 됩니다. 코드를 고쳐야 할 때는 Claude Code에게 이 문서를 읽히면 됩니다.
+pier-lab.kr은 Jekyll로 빌드해 GitHub Pages에서 서비스하는 정적 사이트입니다. 콘텐츠는 `/admin/`에서
+고치고, Supabase Edge Function이 GitHub에 대신 커밋합니다. 나머지는 저장소를 직접 고칩니다.
+모든 수정은 git 커밋이고, 실제 사이트 반영까지 3~5분 걸립니다.
 
-- **공개 주소**: https://pier-lab.kr
-- **관리자 화면**: https://pier-lab.kr/admin/
-- **코드 저장소**: https://github.com/kist-pier/kist-pier.github.io
-
----
-
-## 1. 먼저 알아야 할 것 — 이 사이트는 "미리 인쇄된 포스터"입니다
-
-보통 웹사이트(네이버 카페 같은)는 누가 접속할 때마다 서버가 그 자리에서 페이지를 만들어 줍니다.
-**이 사이트는 그런 서버가 없습니다.** 미리 만들어 둔 HTML 파일을 GitHub이 그냥 나눠줄 뿐입니다.
-
-그래서 홈페이지를 고치려면 반드시 이 순서를 거칩니다.
-
-```
-원본 파일 수정  →  다시 인쇄(빌드)  →  게시판에 붙이기(배포)
-   GitHub          GitHub Actions        GitHub Pages
-```
-
-**수정한 내용이 실제 사이트에 보이기까지 3~5분 걸립니다.** 고장이 아니라 원래 그렇습니다.
-
-### 등장인물 3명
-
-| 누구 | 역할 | 어디서 보나 |
-|---|---|---|
-| **GitHub** | 원본 파일 보관 + 수정 이력 + 빌드/배포 | github.com/kist-pier/kist-pier.github.io |
-| **Supabase** | 로그인 확인 + 계정 명단 + 대신 커밋해주는 서버 | supabase.com/dashboard |
-| **GitHub Pages** | 완성된 사이트를 방문자에게 서빙 | pier-lab.kr |
-
-### 왜 CMS(관리자 화면)가 필요한가
-
-GitHub에 파일을 쓰려면 **열쇠(권한)** 가 필요합니다. 그런데 브라우저 코드는 누구나 볼 수 있어서
-(F12만 누르면 됩니다) 열쇠를 브라우저에 넣으면 **전 세계가 우리 홈페이지를 고칠 수 있게 됩니다.**
-
-그래서 Supabase에 **심부름꾼(Edge Function)** 을 하나 두었습니다.
-
-- 열쇠는 오직 심부름꾼만 갖고 있고, Supabase 서버 안에서만 돌아가서 아무도 못 들여다봅니다
-- 사용자는 "이렇게 바꿔주세요" 라고 **부탁**만 하고, 심부름꾼이 신원을 확인한 뒤 **대신** 커밋합니다
-
-`_config.yml`에 적힌 `supabase_url`과 `sb_publishable_...`은 **열쇠가 아니라 주소**입니다.
-공개돼도 괜찮습니다. 진짜 열쇠(`sb_secret_...`, GitHub App private key)는 Supabase 안에만 있습니다.
-
-### 로그인하면 벌어지는 일
-
-```
-1. /admin/ 에서 이메일 + 비밀번호 입력
-2. Supabase Auth 가 신원 확인 → 1시간짜리 출입증(토큰) 발급
-3. 브라우저가 출입증을 들고 심부름꾼에게 "나 누구야?" 질문
-4. 심부름꾼이 두 번 확인:
-     ① 출입증이 진짜인가        → Supabase Auth 에 확인
-     ② 이 사람이 명단에 있는가   → cms_profiles 표 확인
-5. 통과하면 편집 화면이 열림
-```
-
-**비밀번호가 맞아도 `cms_profiles` 명단에 없으면 아무것도 못 합니다.**
-계정 만들기가 2단계(계정 생성 + 명단 등록)인 이유가 이것입니다.
-
-명단은 **요청할 때마다 매번** 다시 확인합니다. 명단에서 빼면 바로 다음 순간부터 차단됩니다.
+| | |
+|---|---|
+| 공개 사이트 | https://pier-lab.kr |
+| 관리자 화면 | https://pier-lab.kr/admin/ |
+| 저장소 | https://github.com/kist-pier/kist-pier.github.io |
+| Supabase | https://supabase.com/dashboard/project/bebtbbhlakjlnhzeeaol |
 
 ---
 
-## 2. 계정 추가하기 (가장 자주 하는 일)
+## 1. 빠른 참조
 
-### 권한은 두 종류뿐입니다
+| 하려는 일 | 어디 |
+|---|---|
+| 사이트가 이상하다 | 2장 |
+| 새 구성원 계정 만들기 | 3장 |
+| 나간 사람 권한 없애기 | 3장 |
+| 뉴스·멤버·논문·사진 고치기 | 4장 |
+| 페이지 구조나 디자인 고치기 | 5장, 6장 |
+| CMS 코드 고치고 배포하기 | 6장 |
+| 담당자 교체 | 7장 |
 
-| | **admin** | **member** |
+---
+
+## 2. 고장났을 때
+
+| 증상 | 원인 | 대처 |
 |---|---|---|
-| News 작성/수정/삭제 | O | X |
-| Members, Gallery, Publications, 장비/시설/채용 편집 | O | X |
-| 페이지 원본 편집 | O | X |
-| **본인 프로필만** 수정 | 연결했으면 O | O (이것만) |
+| `이메일 또는 비밀번호를 확인해 주세요` | 비밀번호 오류, 또는 계정 생성 시 Auto Confirm 누락 | Supabase → Authentication → Users에서 계정 확인. 3장 |
+| `서버에 연결할 수 없습니다` | Supabase 프로젝트 일시정지. 무료 플랜은 7일 무사용 시 자동 정지 | 대시보드에서 Resume. 공개 사이트는 영향 없음 |
+| `시도가 너무 많습니다` | 로그인 실패 누적으로 일시 차단 | 몇 분 뒤 재시도 |
+| `CMS 사용 권한이 등록되지 않은 계정입니다` | 계정은 있으나 `cms_profiles`에 없음 | 3장 2단계 SQL 실행 |
+| `… 다른 곳에서 먼저 수정되었습니다` | 편집 중 다른 사람이나 다른 탭이 같은 파일을 저장 | Reload 후 다시 편집. 덮어쓰기는 일어나지 않음 |
+| `콘텐츠 파일을 찾을 수 없습니다` | 파일이 없거나 GitHub App 권한 문제 | 저장소에 해당 파일이 있는지 먼저 확인 |
+| `파일 용량이 너무 큽니다` | 사진 600KB / CV 4MB 초과 | 사진은 자동 축소되므로 대개 CV. PDF를 줄여 재시도 |
+| 저장했는데 사이트에 안 보임 | 배포 대기 또는 빌드 실패 | 3~5분 대기 후 [Actions](https://github.com/kist-pier/kist-pier.github.io/actions)에서 Deploy site 확인 |
+| 로컬에서만 옛 내용이 보임 | CMS는 GitHub에 직접 커밋하므로 로컬은 모름 | `git pull --rebase origin main` |
+| 멤버 화면이 비어 있음 | `member` 계정의 `member_id`가 없거나 `_data/members.yml`의 `id`와 불일치 | 3장 |
+| 탭을 닫았더니 로그아웃됨 | 세션이 탭 단위로 저장됨 | 정상 동작. 다시 로그인 |
 
-`member`는 자기 항목의 10개 필드만 고칠 수 있습니다:
-`name_en`, `name_ko`, `email`, `github`, `cv`, `website`, `affiliation`, `education`, `research_areas`, `bio`.
-화면에서 숨긴 게 아니라 **서버가 거부**합니다. PI와 졸업생 항목은 member가 건드릴 수 없습니다.
+### 잘못 저장했을 때
 
-### 2단계로 만듭니다
+모든 변경이 git 커밋이므로 되돌릴 수 있습니다. GitHub에서 해당 커밋의 해시를 확인한 뒤:
 
-**1단계 — 계정 만들기** (Supabase 대시보드)
+```bash
+git pull --rebase origin main
+git revert <커밋해시>
+git push origin main
+```
 
-`Authentication` → `Users` → **`Add user`** → **`Create new user`**
+CMS가 열리지 않아도 GitHub에서 파일을 직접 편집할 수 있습니다.
 
-- Email: 그 사람 이메일
-- Password: 12자 이상, 이 프로젝트 전용으로 새로 만들 것
-- **`Auto Confirm User` 반드시 체크**
+### 누가 무엇을 고쳤는지
 
-> **`Invite` 버튼은 쓰지 마세요.** Supabase 기본 메일러는 프로젝트 팀 소속이 아닌 주소로
-> 발송을 거부합니다. 메일이 영영 오지 않고, 원인도 안 보입니다.
-> (custom SMTP를 붙이면 해결되지만 아직 안 붙였습니다.)
-
-**2단계 — 명단에 올리기** (Supabase `SQL Editor`)
-
-관리자를 만들 때:
+Supabase → SQL Editor:
 
 ```sql
-insert into public.cms_profiles (user_id, email, display_name, role, member_id)
-select id, email, '홍길동', 'admin', null
-from auth.users
-where lower(email) = lower('여기에_그_사람_이메일')
-on conflict (user_id) do update
-set display_name = excluded.display_name,
-    role = excluded.role,
-    member_id = excluded.member_id
-returning user_id, email, role;
+select created_at, actor_email, action, target_path, commit_sha
+from public.cms_audit_logs
+order by created_at desc
+limit 50;
 ```
 
-일반 멤버를 만들 때 (`'admin'` → `'member'`, `null` → 그 사람의 member_id):
+감사 로그 기록이 실패해도 저장은 진행되므로 누락될 수 있습니다. 권위 있는 기록은 git 이력입니다.
+
+---
+
+## 3. 계정 추가와 권한 회수
+
+### 권한 두 종류
+
+| 할 수 있는 일 | admin | member |
+|---|---|---|
+| 뉴스·멤버·논문·갤러리·장비·채용 편집 | O | X |
+| 페이지 원본 편집 | O | X |
+| 본인 프로필 수정 | `member_id` 연결 시 O | O |
+
+`member`는 자기 항목의 10개 필드만 수정합니다: `name_en`, `name_ko`, `email`, `github`, `cv`,
+`website`, `affiliation`, `education`, `research_areas`, `bio`. 서버에서 강제하므로 다른 항목이나
+다른 사람은 건드릴 수 없습니다.
+
+### 1단계 — 계정 생성
+
+Supabase → Authentication → Users → Add user → Create new user
+
+- Email, Password(12자 이상, 이 프로젝트 전용)
+- **Auto Confirm User 체크.** 빼먹으면 로그인 시 "비밀번호를 확인해 주세요"만 반복됩니다
+
+Invite 버튼은 쓰지 마십시오. Supabase 기본 메일러는 프로젝트 팀이 아닌 주소로 발송하지 않습니다.
+같은 이유로 로그인 화면의 `Forgot password?`도 메일이 도착하지 않습니다. 비밀번호를 잊은 사람은
+관리자가 Users 화면에서 직접 재설정합니다. custom SMTP를 붙이면 둘 다 해결됩니다.
+
+### 2단계 — 명단 등록
+
+Supabase → SQL Editor. `admin`이면 `role`을 `'admin'`, `member_id`를 `null`로 둡니다. `member`면
+`role`을 `'member'`, `member_id`를 `_data/members.yml`의 `id`와 정확히 같게 씁니다.
 
 ```sql
 insert into public.cms_profiles (user_id, email, display_name, role, member_id)
 select id, email, '정지연', 'member', 'intern-jiyeon-joung'
 from auth.users
-where lower(email) = lower('여기에_그_사람_이메일')
+where lower(email) = lower('0926187@kist.re.kr')
 on conflict (user_id) do update
 set display_name = excluded.display_name,
     role = excluded.role,
@@ -122,221 +112,224 @@ set display_name = excluded.display_name,
 returning user_id, email, role;
 ```
 
-**성공 판정: 반드시 1행이 반환되어야 합니다.**
-`Success. No rows returned` 이면 이메일 오타입니다. 그냥 넘어가면 나중에 로그인은 되는데
-"CMS 사용 권한이 등록되지 않은 계정입니다" 만 뜨고 원인을 못 찾습니다.
-`select email from auth.users;` 로 실제 저장된 주소를 확인하세요.
+**1행이 반환되어야 합니다.** `No rows returned`이면 이메일이 일치하지 않은 것입니다.
+`select email from auth.users;`로 실제 저장된 주소를 확인하십시오. 여기서 넘어가면 로그인은 되지만
+"권한이 등록되지 않은 계정"만 뜹니다.
 
-**`member_id`는 `_data/members.yml`의 `id` 값과 글자 하나까지 같아야 합니다.**
-CMS의 Members 화면에서 각 사람의 Member id를 볼 수 있습니다.
+`member_id`는 CMS의 Members → Students 화면에서 각 사람의 Member id로 확인합니다.
 
-### 권한 회수 (사람이 나갈 때)
-
-계정을 삭제하려 하지 마세요. **거부됩니다.** (감사 로그가 그 계정을 참조하고 있어서
-Postgres가 삭제를 막습니다.) 이 한 줄이 정답입니다:
+### 권한 회수
 
 ```sql
-delete from public.cms_profiles where lower(email) = lower('나간사람_이메일');
+delete from public.cms_profiles where lower(email) = lower('나간사람@kist.re.kr');
 ```
 
-명단은 매 요청마다 확인하므로 **다음 순간부터 즉시 차단**됩니다.
-로그인 계정 자체는 남지만 아무 권한도 없습니다.
+명단은 요청마다 조회하므로 다음 요청부터 차단되며, 이미 발급된 세션도 함께 막힙니다.
 
-### 공용 계정은 권하지 않습니다
+Auth 계정 자체는 남습니다. 그 계정이 한 번이라도 편집했다면 감사 로그가 참조하고 있어 Users
+화면에서 삭제하면 외래 키 오류가 납니다. 계정까지 지우려면 감사 로그를 먼저 지워야 하는데 그러면
+기록이 사라집니다. 권한만 회수하는 위 방법을 권합니다.
 
-만들 수는 있지만, 그러면 감사 로그와 커밋이 전부 "공용계정"으로 남아 **누가 무엇을 했는지
-추적이 불가능**해집니다. 한 명이 나가면 모두의 비밀번호를 바꿔야 하고, 비밀번호는
-카톡·메모를 타고 퍼집니다. 계정 만드는 비용은 클릭 몇 번 + SQL 한 줄이니 각자 만드세요.
+각자 계정을 만드십시오. 공용 계정은 감사 로그와 커밋이 전부 같은 이름으로 남아 추적이 불가능하고,
+한 명이 나갈 때마다 전원의 비밀번호를 바꿔야 합니다.
 
 ---
 
-## 3. CMS로 할 수 있는 것
+## 4. CMS 화면 지도
 
-`https://pier-lab.kr/admin/` 로그인 후 왼쪽 메뉴:
+`https://pier-lab.kr/admin/` — 사이드바 7개 그룹. 화면이 여럿인 그룹은 상단 탭으로 나뉩니다.
 
-| 메뉴 | 탭 | 하는 일 |
+| 그룹 | 탭 | 편집 대상 |
 |---|---|---|
-| **Members** | Students | 학생 카드별 편집, 추가/삭제, **사진 업로드**, **CV(PDF) 업로드** |
-| | Advisor (PI) | 지도교수 페이지 — 사진, 링크(Email·Scholar·GitHub·Website·CV), 소개글, 학력, 경력, 수상 |
-| | Alumni (interns / undergrad) | 졸업생 명단 — 이름, 기간, 소속, 이직처, LinkedIn |
-| **News** | | 목록 → 편집/삭제, 새 글 작성 |
-| **Gallery** | | 사진 여러 장 한 번에 업로드, 캡션·분류·날짜 편집 |
-| **Publications** | | 목록 → 편집/삭제, **BibTeX 붙여넣기로 자동 채우기** |
-| **Lab info** | Research areas / Research projects / Lab equipment / Facilities | 연구 분야·프로젝트 영상·장비·시설 편집, 추가/삭제, 사진 업로드 |
-| **Contact** | | 채용 공고 — 내용, 지원 링크(Google 폼), 공개 여부 |
-| **Website content** | | 위에서 안 되는 것들의 원본(YAML/Markdown) 직접 편집 |
+| Members | Students | 재학생 카드. 추가·삭제, 사진 업로드, CV(PDF) 업로드 |
+| Members | Advisor (PI) | 지도교수 페이지. 사진, 링크(Email·Scholar·GitHub·Website·CV), 소개, 학력, 경력, 수상 |
+| Members | Alumni (interns / undergrad) | 졸업생 명단. 이름, 기간, 소속, 이직처, LinkedIn |
+| News | — | 뉴스 목록·편집·삭제, 새 글 작성 |
+| Gallery | — | 사진 다중 업로드, 캡션·분류·날짜 |
+| Publications | — | 논문 목록·편집·삭제. BibTeX 붙여넣기로 자동 입력 |
+| Lab info | Research areas | 연구 분야. 홈 화면과 Research 페이지가 함께 읽음 |
+| Lab info | Research projects | 영상 카드. YouTube 주소를 붙여넣으면 ID 자동 추출 |
+| Lab info | Lab equipment / Facilities | 장비·시설. 사진 업로드 |
+| Contact | — | 채용 공고. 내용, 지원 링크(Google 폼), 공개 여부 |
+| Website content | — | 위에 없는 파일의 원본(YAML·Markdown) 직접 편집 |
 
-사이드바는 6개 그룹이고, 여러 화면이 있는 그룹은 위쪽 **탭**으로 나뉩니다.
+### 자동 처리
 
-### 자동으로 되는 것들 (신경 안 써도 됨)
+- 사진은 멤버 600×600, 갤러리 긴 변 1600px, 장비 1200px JPEG로 브라우저에서 축소해 업로드합니다
+- 업로드 파일명은 member id 또는 날짜·캡션에서 생성합니다. 직접 정하지 않습니다
+- Gallery는 저장할 때 날짜 내림차순으로 재정렬합니다
+- 저장 시 주석·빈 줄·따옴표 스타일이 보존됩니다. 값을 바꾸지 않고 저장하면 파일이 변하지 않습니다
 
-- **사진**: 멤버 사진은 600×600, 갤러리는 긴 변 1600px JPEG로 **자동 리사이즈**됩니다.
-  5MB 폰 사진을 올려도 알아서 줄어듭니다.
-- **파일명**: 사람이 정하지 않습니다. 멤버 사진은 member id에서, 갤러리는 날짜+캡션에서
-  자동 생성돼 기존 규칙과 항상 일치합니다.
-- **Gallery 정렬**: 저장하면 날짜 내림차순으로 자동 정렬됩니다.
-- **원본 서식 보존**: 저장할 때 한글 주석, 빈 줄, 따옴표 스타일이 그대로 유지됩니다.
-  값을 안 바꾸고 저장하면 파일이 **한 글자도 안 바뀝니다.**
+### 안 되는 것
 
-### CMS로 안 되는 것
+- **항목 순서 변경.** 새 항목은 해당 구역 끝에 추가됩니다. 순서를 바꾸려면 Website content에서 해당 YAML을 직접 편집합니다
+- 업로드한 사진·PDF 삭제. 참조만 지워지고 파일은 저장소에 남습니다
+- 페이지 레이아웃과 디자인
 
-- 페이지 레이아웃·디자인 변경
-- 사진 삭제 (참조만 빼면 되고, 파일은 남습니다)
+### Website content의 Site settings
 
-이런 건 GitHub에서 직접 고치거나 Claude Code에게 시키면 됩니다.
-
-### ⚠️ `Website content` → `Site settings (advanced)` 는 건드리지 마세요
-
-이 항목은 `_config.yml`(사이트 전체 설정, 649줄)을 검사 없이 그대로 덮어씁니다. 두 가지가 위험합니다.
-
-1. **YAML 문법이 깨지면** 빌드가 실패해 배포가 멈춥니다. 그 뒤로는 CMS가 "저장했습니다"라고
-   하면서도 **아무것도 배포되지 않습니다.**
-2. **`cms:` 블록을 지우면** `/admin/` 로그인 화면이 비활성화되어 **되돌릴 수단이 CMS 안에
-   남지 않습니다.** (GitHub에서 직접 고쳐야 합니다.)
-
-사이트 설정은 1년에 몇 번 바뀌지 않습니다. GitHub에서 고치고 커밋 이력을 남기는 편이 안전합니다.
-아예 메뉴에서 빼고 싶다면 `supabase/functions/cms-content/index.ts`의 `STATIC_RESOURCES`에서
-`settings:site` 항목과 `assets/js/cms-admin.js`의 같은 항목을 지우면 됩니다(각 한 덩어리).
+이 항목은 `_config.yml`(650줄)을 검사 없이 덮어씁니다. YAML이 깨지면 빌드가 실패해 이후 모든 CMS
+저장이 성공한 것처럼 보이면서 배포되지 않습니다. `cms:` 블록을 지우면 `/admin/` 로그인이
+비활성화되어 CMS 안에서는 복구할 수 없습니다. 사이트 설정은 GitHub에서 직접 고치십시오.
 
 ---
 
-## 4. 코드를 고쳐야 할 때
+## 5. 시스템 구조
 
-### 저장소 구조 (알아두면 좋은 것만)
+반영에 3~5분 걸리는 이유는 사이트가 정적이기 때문입니다. 파일이 바뀌면 GitHub Actions가 Jekyll로
+사이트 전체를 다시 빌드해 GitHub Pages에 배포합니다.
 
 ```
-_data/            멤버·장비·시설·갤러리·채용 목록 (YAML)
-_news/            뉴스 글 하나당 파일 하나 (Markdown)
+파일 수정 → git 커밋 → GitHub Actions 빌드 → GitHub Pages 배포
+```
+
+CMS가 GitHub에 직접 쓰려면 저장소 쓰기 권한이 필요한데, 그 자격 증명을 브라우저 코드에 넣으면
+누구나 읽을 수 있습니다. 그래서 Supabase Edge Function이 중간에서 신원과 권한을 확인한 뒤 대신
+커밋합니다. 자격 증명은 Supabase 안에만 있습니다.
+
+로그인 확인은 두 단계입니다. Supabase Auth가 계정을 확인해 토큰을 발급하고, Edge Function이 요청마다
+`cms_profiles`를 조회해 권한을 확인합니다. 비밀번호가 맞아도 명단에 없으면 아무것도 할 수 없습니다.
+
+`_config.yml`의 `supabase_url`과 `sb_publishable_...`은 공개용 식별자입니다. 실제 자격 증명은
+`sb_secret_...`과 GitHub App private key이며 Supabase 시크릿에만 있습니다.
+
+세션은 탭 단위로 저장되고 토큰은 자동 갱신됩니다. 오래 켜 두어도 로그아웃되지 않지만 탭을 닫으면
+다시 로그인해야 합니다.
+
+Supabase가 중단되면 CMS만 멈추고 공개 사이트는 영향받지 않습니다. 빌드가 실패하면 직전 배포본이
+계속 서비스됩니다.
+
+---
+
+## 6. 코드 수정과 배포
+
+### 저장소 구조
+
+```
+_data/            멤버·연구분야·연구프로젝트·장비·시설·갤러리·채용 (YAML)
+_news/            뉴스 글 1건당 파일 1개 (Markdown)
 _bibliography/    논문 목록 (BibTeX)
-_pages/           각 페이지 내용
+_pages/           각 페이지
 _includes/        머리글·바닥글 등 공통 조각
-_sass/            디자인(CSS)
+_sass/            디자인
 assets/img/       이미지
-admin/            CMS 화면 (HTML)
-assets/js/cms-admin.js    CMS 브라우저 코드
+admin/            CMS 화면
+assets/js/cms-admin.js                     CMS 브라우저 코드
 supabase/functions/cms-content/index.ts    CMS 서버 코드
 docs/             이 문서와 최초 설치 가이드
 ```
 
-### 배포는 두 곳입니다 — 가장 많이 틀리는 부분
+### 배포 대상이 두 곳입니다
 
-| 고친 곳 | 반영 방법 |
+| 고친 파일 | 반영 방법 |
 |---|---|
-| `supabase/functions/**` (서버 로직) | `npx supabase@latest functions deploy cms-content --no-verify-jwt` |
-| **그 외 전부** (페이지, CMS 화면, 데이터) | `git push` |
+| `supabase/functions/**` | Supabase 배포 |
+| 그 외 전부 | `git push` |
 
-**CMS를 수정했다면 보통 둘 다 필요합니다.**
-서버만 배포하고 push를 안 하면 "서버는 새 기능이 있는데 화면이 옛날 것"이 되어
-아무 일도 안 일어나는 것처럼 보입니다.
+CMS를 수정하면 대개 둘 다 필요합니다. 서버만 배포하고 push하지 않으면 화면이 옛 코드라 새 기능이
+동작하지 않습니다.
 
-### push 전에 항상 pull
+### Supabase 배포
 
-**CMS가 GitHub에 직접 커밋합니다.** 그래서 로컬에서 작업하는 동안 원격이 먼저 앞서갈 수 있고,
-그대로 push하면 거부됩니다.
+Node.js 20 이상이 필요합니다. 없으면 먼저 설치합니다.
 
 ```bash
-cd ~/pier_lab_page/kist-pier.github.io
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.7/install.sh | bash
+# 새 터미널을 연 뒤
+nvm install --lts
+```
+
+새로 클론한 저장소에는 Supabase 연결 정보가 없습니다(`supabase/.temp/`는 커밋되지 않습니다).
+최초 1회:
+
+```bash
+npx supabase@latest login
+npx supabase@latest link --project-ref bebtbbhlakjlnhzeeaol
+```
+
+이후 매번:
+
+```bash
+npx supabase@latest functions deploy cms-content --no-verify-jwt
+```
+
+`Docker is not running` 경고는 무시합니다. 배포 확인:
+
+```bash
+curl -i -X POST https://bebtbbhlakjlnhzeeaol.supabase.co/functions/v1/cms-content \
+  -H 'content-type: application/json' -d '{"action":"me"}'
+```
+
+`401 {"error":"로그인이 필요합니다."}`가 정상입니다.
+
+### git push
+
+CMS가 저장소에 직접 커밋하므로 원격이 앞서 있을 수 있습니다. push 전에 항상:
+
+```bash
 git pull --rebase origin main
 git push origin main
 ```
 
-> **`git push --force`는 절대 쓰지 마세요.** CMS가 올린 커밋이 사라집니다.
+`git push --force`는 쓰지 마십시오. CMS가 올린 커밋이 사라집니다.
 
 ### 자동 검사
 
-`.github/workflows/cms-check.yml`이 CMS 코드가 바뀔 때마다 자동으로 확인합니다:
-
-- 브라우저 JS 문법
-- 서버 코드 타입 검사 + 서식
-- `_config.yml`의 CMS 설정이 비어 있거나, 공개 파일에 secret key가 들어갔는지
-
-빨간불이면 Actions 탭에서 어느 검사가 실패했는지 볼 수 있습니다.
+`.github/workflows/cms-check.yml`이 CMS 코드 변경 시 실행됩니다. 브라우저 JS 문법, 서버 코드 타입
+검사와 서식, `_config.yml`의 CMS 설정 누락과 secret key 유입 여부를 확인합니다. 실패하면 Actions
+탭에서 어느 단계인지 볼 수 있습니다.
 
 ---
 
-## 5. 고장났을 때
-
-| 증상 | 원인과 대처 |
-|---|---|
-| **로그인이 "비밀번호를 확인하세요"만 반복** | Supabase 프로젝트가 잠자는 중일 수 있습니다. 무료 플랜은 **7일 동안 사용이 없으면 자동 일시정지**됩니다. 대시보드에서 `Resume` 두 번 클릭이면 깨어납니다. (공개 사이트는 영향 없습니다.) |
-| **"CMS 사용 권한이 등록되지 않은 계정입니다"** | 계정은 있는데 `cms_profiles` 명단에 없습니다. 2장 2단계 SQL 실행 |
-| **"콘텐츠 파일을 찾을 수 없습니다"** | GitHub App 권한 문제일 가능성이 큽니다. 파일이 실제로 있는지 먼저 확인 |
-| **저장은 됐는데 사이트에 안 보임** | ① 3~5분 대기 ② Actions에서 `Deploy site` 초록불 확인. 빨간불이면 빌드 실패 |
-| **로컬에서만 옛날 내용이 보임** | CMS는 GitHub에 커밋하므로 로컬은 모릅니다. `git pull --rebase origin main` |
-| **잘못 저장해서 망가뜨림** | 모든 저장이 git 커밋입니다. GitHub에서 해당 커밋을 **Revert**하면 복구됩니다 |
-| **CMS 자체가 안 열림** | GitHub에서 파일을 직접 편집하면 됩니다. **이 비상구는 항상 열려 있습니다** |
-
-### 이 구조의 좋은 점
-
-- Supabase가 멈춰도 **공개 사이트는 멀쩡합니다.** CMS만 안 될 뿐입니다.
-- 빌드가 실패해도 게시판에는 **직전 정상 버전이 계속 붙어 있습니다.**
-- 모든 수정이 git 커밋이라 **언제든 되돌릴 수 있습니다.**
-
----
-
-## 6. 인수인계 체크리스트
-
-넘겨받는 사람이 **반드시 확보해야 할 것들**입니다.
+## 7. 인수인계 체크리스트
 
 ### 접근 권한
 
-- [ ] **Supabase 조직 `kist-pier`** 멤버 초대 (Organization → Team → Invite member)
-      → 본인 GitHub 계정으로 로그인합니다. **비밀번호를 공유받지 마세요.**
-- [ ] **Owner를 최소 2명** 유지 — 1명이면 그 사람이 떠날 때 프로젝트가 묶입니다
-- [ ] **GitHub 조직 `kist-pier`** 저장소 write 권한
-- [ ] CMS 관리자 계정 (2장 참고)
+- [ ] Supabase 조직 `kist-pier` 초대(Organization → Team → Invite member). 본인 계정으로 로그인하며 비밀번호를 공유받지 않습니다
+- [ ] Supabase Owner 2명 이상 유지. 1명이면 그 사람이 떠날 때 프로젝트가 잠깁니다
+- [ ] GitHub 조직 `kist-pier` 저장소 write 권한
+- [ ] CMS 관리자 계정(3장)
 
-### 어딘가에 기록되어 있어야 할 값
+### 인계 값
 
-| 항목 | 값 / 위치 | 비밀? |
+| 항목 | 값 또는 위치 | 비밀 |
 |---|---|---|
 | Supabase project ref | `bebtbbhlakjlnhzeeaol` | 아니오 |
-| Supabase 대시보드 | supabase.com/dashboard/project/bebtbbhlakjlnhzeeaol | 아니오 |
 | GitHub App ID | `4858390` | 아니오 |
 | GitHub App Installation ID | `159708220` | 아니오 |
-| **Database password** | 공용 비밀번호 관리자 | **예** |
-| **`sb_secret_...`** | Supabase Settings → API Keys에서 재발급 가능 | **예** |
-| **GitHub App private key (.pem)** | 안전한 곳. 분실 시 재발급 후 재배포 | **예** |
-| Owner 명단 | 이 문서에 적어두세요 | 아니오 |
+| Database password | 공용 비밀번호 관리자 | 예 |
+| `sb_secret_...` | Supabase → Settings → API Keys에서 재발급 | 예 |
+| GitHub App private key(.pem) | 분실 시 재발급 후 재배포 필요 | 예 |
+| Supabase Owner 명단 | 아래에 기록 | 아니오 |
 
-### 주기적으로 확인할 것
+### 정기 확인
 
-- **Supabase 무료 플랜 일시정지** — 7일 무사용이면 잠듭니다.
-  자주 안 쓴다면 3일에 한 번 깨우는 자동화를 걸거나 Pro($25/월)를 검토하세요.
-- **GitHub App은 만료가 없습니다** (개인 토큰과 달리). 사람이 바뀌어도 끊기지 않습니다.
-- **Auth 최소 비밀번호 12자** 설정이 유지되고 있는지 (Authentication → Sign In / Providers → Email)
+- Supabase 무료 플랜은 7일 무사용 시 정지됩니다. 사용 빈도가 낮으면 keep-alive 작업을 걸거나 Pro($25/월)를 검토하십시오
+- GitHub App은 만료가 없습니다. 담당자가 바뀌어도 끊기지 않습니다
+- Auth 최소 비밀번호 12자 설정 유지(Authentication → Sign In / Providers → Email)
 
 ---
 
-## 7. Claude Code로 작업할 때
+## 부록 A. Claude Code로 작업하기
 
-다음 사람도 Claude Code를 쓴다면, 이렇게 시작하면 됩니다.
+저장소 루트에서:
 
 ```bash
-cd ~/pier_lab_page/kist-pier.github.io
 git pull --rebase origin main
 claude
 ```
 
-그리고 이렇게 말하면 됩니다:
+`docs/MAINTENANCE.md`와 `docs/CMS_SETUP.md`를 먼저 읽게 한 뒤 작업을 지시합니다.
 
-> `docs/MAINTENANCE.md`와 `docs/CMS_SETUP.md`를 먼저 읽고, (하려는 일)을 해줘.
+반드시 전달할 세 가지:
 
-**Claude Code에게 반드시 알려줄 것 세 가지:**
+1. `supabase/functions/**`를 고쳤으면 Supabase 배포가 따로 필요합니다. git push만으로는 반영되지 않습니다
+2. push 전에 `git pull --rebase`. CMS가 직접 커밋하므로 원격이 앞서 있을 수 있습니다
+3. 데이터 파일 저장 로직을 고쳤으면, 값을 바꾸지 않고 저장했을 때 파일이 변하지 않는지 확인해야 합니다. 서식이 깨지면 저장할 때마다 무관한 diff가 쌓입니다
 
-1. **CMS 서버 코드(`supabase/functions/**`)를 고쳤으면 `functions deploy`가 따로 필요하다** —
-   git push만으로는 서버에 반영되지 않습니다.
-2. **push 전에 `git pull --rebase`** — CMS가 직접 커밋하므로 원격이 앞서 있을 수 있습니다.
-3. **데이터 파일 저장 로직을 건드렸다면, 값을 그대로 다시 저장했을 때 파일이 한 글자도
-   안 바뀌는지 확인** — 서식이 깨지면 매 저장마다 관계없는 diff가 쌓입니다.
+로컬 미리보기에는 Ruby와 Jekyll이 필요합니다. 설치돼 있지 않으면 push해서 확인하는 편이 빠릅니다.
 
-로컬 미리보기가 필요하면 Ruby/Jekyll이 필요한데, 없어도 **GitHub에 push해서 확인하는 편이
-훨씬 간단합니다.** 3~5분이면 실제 사이트에 반영됩니다.
+## 부록 B. 최초 설치
 
----
-
-## 부록 — 최초 설치 기록
-
-이 시스템을 처음부터 다시 세워야 한다면 `docs/CMS_SETUP.md`에 전체 절차가 있습니다.
-Supabase 프로젝트 생성, 데이터베이스 마이그레이션, GitHub App 발급, 시크릿 업로드,
-Edge Function 배포 순서가 모두 적혀 있습니다.
+시스템을 처음부터 다시 세워야 한다면 `docs/CMS_SETUP.md`에 Supabase 프로젝트 생성, 데이터베이스
+마이그레이션, GitHub App 발급, 시크릿 업로드, Edge Function 배포 순서가 있습니다.
