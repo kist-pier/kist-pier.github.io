@@ -52,7 +52,7 @@ projects:
       - "Jetson Orin"
       - "hand-over"
 
-  - video: "Ul8FCtOhl58"
+  - video: "6cVNyKLgVJg"
     heading: "Humanoid Perceptive Locomotion"
     area: "Whole-Body Control"
     description: "An RL-based Perceptive locomotion demonstration of the Unitree G1 humanoid walking on stairs."
