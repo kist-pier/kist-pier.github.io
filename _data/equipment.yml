@@ -13,7 +13,6 @@ equipment:
 
   - name: "Vive Teleoperation"
     image: /assets/img/lab-equipment/vive_teleoperation.jpg
-    description: ""
 
   - name: "Meta Quest Teleoperation"
     image: /assets/img/lab-equipment/meta_quest.jpg
@@ -21,7 +20,6 @@ equipment:
 
   - name: "Hyundai Motors Robotics Gripper"
     image: /assets/img/lab-equipment/hyundai_gripper.jpg
-    description: ""
 
   - name: "Inspire Dexterous Hands"
     image: /assets/img/lab-equipment/inspire_hands.jpg
@@ -29,11 +27,9 @@ equipment:
 
   - name: "Motion Capture"
     image: /assets/img/lab-equipment/motion_capture.jpg
-    description: ""
 
   - name: "IGRIS-C"
     image: /assets/img/lab-equipment/igris_c.jpg
-    description: ""
 
   - name: "Mobile Manipulation"
     image: /assets/img/lab-equipment/mobile_manipulation.jpg
@@ -41,8 +37,7 @@ equipment:
 
   - name: "Automated Process Testbed"
     image: /assets/img/lab-equipment/automated_process.jpg
-    description: ""
 
-  - name: "RGB-D Camera Suite"
+  - name: "RGB-D Cameras"
     image: /assets/img/lab-equipment/rgb_d_cameras.jpg
     description: "D405 · D455 · L515 · D435i · Gemini 335L · GoPro"
