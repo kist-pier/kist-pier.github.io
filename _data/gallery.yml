@@ -1,6 +1,12 @@
 photos:
   # Sorted by date descending (newest first)
 
+  - image: "/assets/img/gallery/2026-10-02_pizza_on_the_lawn_with_namyun_kim_seungseop_lee_taehun_choi\
+      _.jpg"
+    caption: "Pizza on the lawn with Namyun Kim, Seungseop Lee, Taehun Choi, and Wonseok Choi"
+    category: "lab-life"
+    date: "2026-10-02"
+
   - image: "/assets/img/gallery/2026-02-24_taekgeun_nam_chanpyo_hong_farewell_02.jpg"
     caption: "Farewell to Taekgeun Nam & Chanpyo Hong (Interns) (2)"
     category: "lab-life"
