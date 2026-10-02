@@ -130,6 +130,7 @@ undergrad:
       - "Department of Artificial Intelligence, University of Seoul"
     research_areas:
       - "Vision-Language-Action (VLA)"
+      - "Latent-Action-Model (LAM)"
       - "Transfer Learning"
     email: "wonseok.choi@kist.re.kr"
     github: "https://github.com/seok-AI"
