@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
-"""Validate repository-owned image paths and file extensions."""
+"""Validate repository-owned image paths and file extensions.
 
+The full check enforces the canonical naming convention in both the raw archive
+and deployed assets. ``--deployment`` checks only files shipped by Jekyll and
+treats URL-safe legacy separator styles as warnings, so an old cosmetic name
+cannot take the entire public website offline.
+"""
+
+import argparse
 from pathlib import Path
 import re
 import sys
@@ -10,6 +17,7 @@ import xml.etree.ElementTree as ET
 ROOTS = (Path("pictures"), Path("assets/img"))
 IMAGE_SUFFIXES = {".gif", ".jpg", ".png", ".svg"}
 SAFE_COMPONENT = re.compile(r"^[a-z0-9]+(?:[-_][a-z0-9]+)*$")
+URL_SAFE_COMPONENT = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
 
 
 def detected_type(path: Path) -> str:
@@ -30,11 +38,21 @@ def detected_type(path: Path) -> str:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--deployment",
+        action="store_true",
+        help="check deployed assets; report non-canonical URL-safe names as warnings",
+    )
+    options = parser.parse_args()
+
     errors: list[str] = []
+    warnings: list[str] = []
     seen: dict[str, Path] = {}
     checked = 0
 
-    for root in ROOTS:
+    roots = (Path("assets/img"),) if options.deployment else ROOTS
+    for root in roots:
         if not root.is_dir():
             errors.append(f"missing image root: {root}")
             continue
@@ -53,8 +71,17 @@ def main() -> int:
                 continue
 
             checked += 1
-            if path.suffix != path.suffix.lower() or not SAFE_COMPONENT.fullmatch(path.stem):
-                errors.append(f"unsafe image name: {path}")
+            canonical = (
+                path.suffix == path.suffix.lower()
+                and SAFE_COMPONENT.fullmatch(path.stem)
+            )
+            if not canonical:
+                url_safe = (
+                    path.suffix == path.suffix.lower()
+                    and URL_SAFE_COMPONENT.fullmatch(path.stem)
+                )
+                target = warnings if options.deployment and url_safe else errors
+                target.append(f"non-canonical image name: {path}")
 
             folded = path.as_posix().casefold()
             if folded in seen:
@@ -64,6 +91,10 @@ def main() -> int:
             actual = detected_type(path)
             if actual != path.suffix:
                 errors.append(f"extension mismatch: {path} contains {actual}")
+
+    if warnings:
+        print("Image validation warnings:", file=sys.stderr)
+        print("\n".join(f"- {warning}" for warning in warnings), file=sys.stderr)
 
     if errors:
         print("Image validation failed:", file=sys.stderr)

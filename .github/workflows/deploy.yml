@@ -59,7 +59,9 @@ jobs:
           python-version: "3.13"
           cache: "pip"
       - name: Check image names and formats 🖼️
-        run: python3 _scripts/check_image_names.py
+        # Raw originals under pictures/ are not part of the Jekyll artifact. Keep the strict full
+        # check available locally, but do not take the public site offline for an archive filename.
+        run: python3 _scripts/check_image_names.py --deployment
       - name: Update _config.yml ⚙️
         uses: fjogeleit/yaml-update-action@main
         with:

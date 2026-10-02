@@ -2407,7 +2407,9 @@ async function handleAction(
     const date = safeIsoDate(body.date, "Date");
     const slugSource = safePlainText(body.caption ?? "", "Caption", 200)
       .toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "")
-      .slice(0, 60) || "photo";
+      // Truncation can expose a separator that was in the middle of the full slug. Trim again so
+      // generated filenames still satisfy the repository's canonical naming rule.
+      .slice(0, 60).replace(/_+$/g, "") || "photo";
     const { base64, bytes } = decodeUpload(
       body.content_base64,
       MAX_GALLERY_IMAGE_BYTES,
@@ -2415,22 +2417,29 @@ async function handleAction(
     if (!hasSignature(bytes, [0xff, 0xd8, 0xff])) {
       throw new HttpError(400, "JPEG 이미지만 올릴 수 있습니다.");
     }
-    // Several photos can share a date and caption, so find the first free name.
-    let path = `${GALLERY_IMAGE_DIR}/${date}_${slugSource}.jpg`;
-    for (
-      let suffix = 2;
-      suffix <= 20 && await existingFileSha(path);
-      suffix += 1
-    ) {
-      path = `${GALLERY_IMAGE_DIR}/${date}_${slugSource}_${
-        String(suffix).padStart(2, "0")
+    // Several photos can share a date and caption, so find the first free name. Do not reuse the
+    // last candidate when all suffixes are occupied: that would silently overwrite a photo.
+    let path = "";
+    for (let suffix = 1; suffix <= 99; suffix += 1) {
+      const candidate = `${GALLERY_IMAGE_DIR}/${date}_${slugSource}${
+        suffix === 1 ? "" : `_${String(suffix).padStart(2, "0")}`
       }.jpg`;
+      if (!await existingFileSha(candidate)) {
+        path = candidate;
+        break;
+      }
+    }
+    if (!path) {
+      throw new HttpError(
+        409,
+        "같은 날짜와 Caption의 사진이 너무 많습니다. Caption을 구분해서 다시 시도해 주세요.",
+      );
     }
     const saved = await putGitHubFile(
       path,
       base64,
       `cms: add gallery photo ${date}`,
-      await existingFileSha(path),
+      undefined,
       commitAuthor(profile),
     );
     await audit(profile, "admin.gallery.image", path, saved.commit_sha);

@@ -171,7 +171,10 @@ use `YYYY-MM-DD_description_01.jpg`. See `pictures/README.md` for the complete
 naming convention.
 
 Run `python3 _scripts/check_image_names.py` before committing image changes.
-The deployment workflow runs the same check automatically.
+The deployment workflow runs `python3 _scripts/check_image_names.py --deployment`,
+which checks the public `assets/img/` tree. The default local command is stricter and
+also checks the raw `pictures/` archive so naming cleanup remains visible without a
+raw backup filename taking the public website offline.
 
 ### B. Add a news item
 
