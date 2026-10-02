@@ -1,6 +1,19 @@
 photos:
   # Sorted by date descending (newest first)
 
+  - image: "/assets/img/gallery/2026-10-02_pre_chuseok_lab_dinner_w_namyun_kim_seungseop_lee_taehun_ch\
+      o_02.jpg"
+    caption: "Pre-Chuseok lab dinner (w/ Namyun Kim, Seungseop Lee, Taehun Choi, Seungwon Jang, Jiyeon
+      Jung, and Wonseok Choi)"
+    category: "lab-life"
+    date: "2026-10-02"
+
+  - image: "/assets/img/gallery/2026-10-02_pizza_on_the_lawn_with_namyun_kim_seungseop_lee_taehun_choi\
+      __03.jpg"
+    caption: "Pizza on the lawn with Namyun Kim, Seungseop Lee, Taehun Choi, and Wonseok Choi"
+    category: "lab-life"
+    date: "2026-10-02"
+
   - image: "/assets/img/gallery/2026-10-02_pizza_on_the_lawn_with_namyun_kim_seungseop_lee_taehun_choi\
       __02.jpg"
     caption: "Pizza on the lawn with Namyun Kim, Seungseop Lee, Taehun Choi, and Wonseok Choi"
