@@ -7,6 +7,11 @@ photos:
     category: "lab-life"
     date: "2026-10-02"
 
+  - image: "/assets/img/gallery/2026-09-23_pre_chuseok_lab_dinner.jpg"
+    caption: "Pre-Chuseok lab dinner"
+    category: "lab-life"
+    date: "2026-09-23"
+
   - image: "/assets/img/gallery/2026-02-24_taekgeun_nam_chanpyo_hong_farewell_02.jpg"
     caption: "Farewell to Taekgeun Nam & Chanpyo Hong (Interns) (2)"
     category: "lab-life"
