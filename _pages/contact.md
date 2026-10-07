@@ -7,6 +7,8 @@ nav: true
 nav_order: 5
 ---
 
+{% assign application = site.data.positions.application %}
+
 <div class="contact-grid">
 
   <div class="contact-card scroll-reveal">
@@ -39,13 +41,23 @@ nav_order: 5
     We are actively looking for motivated students and researchers passionate about physical intelligence and embodied robotics. Our lab works on <strong>whole-body control of humanoid and mobile manipulator systems</strong>, <strong>visuomotor policy learning</strong>, <strong>imitation learning and teleoperation</strong>, and <strong>physically intelligent robotic systems</strong> for real-world deployment.
   </p>
   <p style="margin-top:0.75rem;">
-    Openings are available for <strong>M.S. / Ph.D. students</strong> (through UST — Korea University of Science and Technology) and <strong>undergraduate / intern researchers</strong>. If you are interested, please send the following to <a href="mailto:jang90@kist.re.kr">jang90@kist.re.kr</a>:
+    Openings are available for <strong>M.S. / Ph.D. students</strong> (through UST — Korea University of Science and Technology) and <strong>undergraduate / intern researchers</strong>. Applications are accepted through the official online application form. Please prepare:
   </p>
   <ul style="margin-top:0.5rem; padding-left:1.25rem;">
     <li>CV / résumé</li>
     <li>Academic transcripts</li>
     <li>Brief statement of research interest</li>
   </ul>
+  {% if application.url and application.url != "" %}
+    <p style="margin-top:1rem;">
+      <a href="{{ application.url | escape }}" target="_blank" rel="noopener noreferrer" class="position-apply-btn">
+        Open Application Form <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" style="margin-left:0.35rem;"></i>
+      </a>
+    </p>
+  {% endif %}
+  <p style="margin-top:0.85rem; font-size:0.88rem; color:#666;">
+    For questions not covered by the form, contact <a href="mailto:jang90@kist.re.kr">jang90@kist.re.kr</a>.
+  </p>
 </div>
 
 <!-- Open Positions -->
@@ -66,8 +78,9 @@ nav_order: 5
       {% endfor %}
     </ul>
     {% endif %}
-    {% if pos.apply_url and pos.apply_url != "" %}
-      <a href="{{ pos.apply_url | escape }}" target="_blank" rel="noopener noreferrer" class="position-apply-btn">Apply</a>
+    {% assign position_apply_url = pos.apply_url | default: application.url %}
+    {% if position_apply_url and position_apply_url != "" %}
+      <a href="{{ position_apply_url | escape }}" target="_blank" rel="noopener noreferrer" class="position-apply-btn">Apply via Google Form</a>
     {% else %}
       <a href="mailto:jang90@kist.re.kr?subject={{ pos.title | uri_escape }}" class="position-apply-btn">Apply by email</a>
     {% endif %}
