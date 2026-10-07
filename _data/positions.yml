@@ -3,28 +3,38 @@ application:
   label: "PIER Lab Application Form"
 
 positions:
-  - title: "M.S. / Ph.D. Student — Humanoid & Whole-Body Control"
-    description: "We seek graduate students to work on whole-body motion generation, hierarchical control, and physically intelligent interaction for humanoid and mobile manipulator systems. Research involves HQP-based control, real robot deployment with Unitree G1 and Franka FR3."
+  - title: "Postdoctoral Researcher"
+    description: "Lead research on physical intelligence and embodied robotics, from problem formulation and algorithm development to experiments on real humanoid and manipulation platforms. Postdoctoral researchers are expected to develop an independent research direction while collaborating with students and lab members."
     requirements:
-      - "Background in mechanical engineering, electrical engineering, robotics, or related field"
-      - "Proficiency in C++ and/or Python; familiarity with ROS/ROS2"
-      - "Interest in control theory, optimization, or real robot experimentation"
-      - "Enrollment through UST (Yonsei University, Korea University etc.)"
+      - "Ph.D. in robotics, mechanical engineering, electrical engineering, computer science, or a related field"
+      - "Research experience in robot control, robot learning, manipulation, humanoids, or a closely related area"
+      - "Strong publication, implementation, and technical communication record"
+      - "Ability to lead projects and conduct experiments on real robotic systems"
     open: true
 
-  - title: "M.S. / Ph.D. Student — Visuomotor Policy & Imitation Learning"
-    description: "Join our team to develop data-driven visuomotor policies for robot manipulation. Research includes behavior cloning, learning from teleoperation demonstrations, and vision-language-action (VLA) models for dexterous tasks in daily-life environments."
+  - title: "M.S. Student"
+    description: "M.S. students develop a focused research project in whole-body robot control, visuomotor policy learning, imitation learning, teleoperation, or contact-rich manipulation. Projects combine algorithm development with validation on PIER Lab's real robotic platforms."
     requirements:
-      - "Background in machine learning, computer science, or robotics"
-      - "Experience with PyTorch or similar deep learning frameworks"
-      - "Interest in robot learning, imitation learning, or foundation models"
-      - "Enrollment through UST (Yonsei University, Korea University etc.)"
+      - "B.S. degree in mechanical engineering, electrical engineering, computer science, robotics, or a related field"
+      - "Proficiency in Python and/or C++; experience with ROS/ROS2, PyTorch, or control frameworks is a plus"
+      - "Strong interest in embodied AI and hands-on real-robot research"
+      - "Eligibility for a KIST-affiliated graduate program"
     open: true
 
-  - title: "Undergraduate / Intern Researcher"
-    description: "Undergraduate and intern researcher positions are available for students interested in gaining hands-on experience with real robotic systems. Projects span robot control, teleoperation, hardware integration, and learning-based manipulation."
+  - title: "Research Intern"
+    description: "Research interns join an active lab project and gain hands-on experience with real robotic systems. Work may include robot control, teleoperation, data collection, hardware integration, simulation, and learning-based manipulation."
     requirements:
-      - "Enrolled in a B.S. program in mechanical engineering, electrical engineering, computer science, or related field"
-      - "Enthusiasm for robotics and willingness to work with real hardware"
-      - "Basic programming skills (Python and/or C++)"
+      - "Current student or recent graduate in engineering, computer science, robotics, or a related field"
+      - "Basic programming ability in Python and/or C++"
+      - "Availability for a sustained research period specified in the application form"
+      - "Initiative, careful documentation, and willingness to work with real hardware"
+    open: true
+
+  - title: "University Field-Placement / Co-op Student"
+    description: "Field-placement students participate through an official university co-op or field-training program. Students work on a defined engineering task while learning the lab's development workflow, safety practices, and real-robot experimentation process."
+    requirements:
+      - "Enrollment in a university program that recognizes field placement, co-op, or academic-credit training"
+      - "Relevant coursework or project experience in robotics, software, electronics, or mechanical systems"
+      - "Ability to participate for the full placement period required by the university and KIST"
+      - "Basic Python and/or C++ skills and a responsible approach to laboratory work"
     open: true
