@@ -5,13 +5,24 @@ permalink: /contact/
 description: Get in touch with the PIER Lab at KIST.
 nav: true
 nav_order: 5
+_styles: |
+  body.sticky-bottom-footer {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.sticky-bottom-footer > .container[role="main"] {
+    width: 100%;
+    flex: 1 0 auto;
+  }
 ---
 
 {% assign application = site.data.positions.application %}
 
 <div class="contact-grid">
 
-  <div class="contact-card scroll-reveal">
+  <div class="contact-card">
     <h3><i class="fa-solid fa-location-dot" style="margin-right: 0.5rem; color: #2d3a8c;"></i>Location</h3>
     <p>
       PIER Lab (Physical Intelligence &amp; Embodied Robotics Laboratory)<br>
@@ -25,7 +36,7 @@ nav_order: 5
     </p>
   </div>
 
-  <div class="contact-card scroll-reveal">
+  <div class="contact-card">
     <h3><i class="fa-solid fa-envelope" style="margin-right: 0.5rem; color: #2d3a8c;"></i>Email</h3>
     <p>
       PI: <a href="mailto:jang90@kist.re.kr">jang90@kist.re.kr</a><br>
@@ -35,7 +46,7 @@ nav_order: 5
 
 </div>
 
-<div class="prospective-box scroll-reveal" style="margin-top: 2rem;">
+<div class="prospective-box" style="margin-top: 2rem;">
   <h3><i class="fa-solid fa-user-group" style="margin-right: 0.5rem;"></i>Join PIER Lab</h3>
   <p>
     PIER Lab recruits researchers who want to build physically intelligent robots and validate their ideas on real hardware. Our work spans <strong>whole-body control for humanoid and mobile manipulator systems</strong>, <strong>visuomotor policy and imitation learning</strong>, <strong>teleoperation and robot data collection</strong>, and <strong>contact-rich manipulation</strong> for real-world deployment.
