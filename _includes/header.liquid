@@ -107,6 +107,11 @@
               {% endif %}
             {% endif %}
           {% endfor %}
+          {% if site.shop.enabled and site.shop.show_in_navigation %}
+            <li class="nav-item {% if page.url contains '/shop/' %}active{% endif %}">
+              <a class="nav-link pier-shop-link" href="{{ '/shop/' | relative_url }}">Shop</a>
+            </li>
+          {% endif %}
           {% if site.cms.enabled and site.cms.supabase_url != '' and site.cms.supabase_publishable_key != '' %}
             <!-- CMS login — same condition as _includes/footer.liquid: an unconfigured CMS must not
                  advertise a Login link that opens a disabled form. -->

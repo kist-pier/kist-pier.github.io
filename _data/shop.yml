@@ -1,0 +1,56 @@
+products:
+  - id: signature-tee
+    name: Signature Tee
+    name_ko: 시그니처 티셔츠
+    category: Everyday essential
+    image: /assets/img/shop/pier_lab_signature_tee.png
+    color: Deep Navy
+    sizes: [S, M, L, XL, 2XL]
+    price: "₩29,000"
+    badge: Drop 01
+    description: Heavyweight cotton with a compact PIER Lab chest mark—quiet enough for every day, distinct enough for the lab.
+    details:
+      - 100% heavyweight cotton
+      - Relaxed unisex fit
+      - Teal chest print
+
+  - id: zip-hoodie
+    name: Lab Zip Hoodie
+    name_ko: 랩 후드집업
+    category: All-season layer
+    image: /assets/img/shop/pier_lab_zip_hoodie.png
+    color: Heather Gray
+    sizes: [S, M, L, XL, 2XL]
+    price: "₩59,000"
+    badge: Staff pick
+    description: A structured full-zip hoodie for cold offices, late experiments, and the walk between KIST buildings.
+    details:
+      - Brushed cotton blend
+      - Double-layer hood
+      - Embroidered chest mark
+
+  - id: sherpa-fleece
+    name: Robotics Fleece
+    name_ko: 로보틱스 후리스
+    category: Cold-lab uniform
+    image: /assets/img/shop/pier_lab_sherpa_fleece.png
+    color: Warm Ivory
+    sizes: [S, M, L, XL]
+    price: "₩79,000"
+    badge: Winter
+    description: Dense sherpa fleece with navy binding and a stand collar, designed for winter commutes and chilly robot rooms.
+    details:
+      - High-pile sherpa fleece
+      - Full-zip stand collar
+      - Embroidered chest mark
+
+notes:
+  - title: Lab pickup
+    icon: fa-location-dot
+    body: KIST L08 pickup is planned for the first drop. Shipping options will be announced with the order form.
+  - title: Made to order
+    icon: fa-shirt
+    body: Quantities and sizes will be collected before production to reduce leftover stock.
+  - title: Checkout next
+    icon: fa-lock
+    body: This preview does not collect payment or personal information. A secure order flow will be connected later.

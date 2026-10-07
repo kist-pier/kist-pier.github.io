@@ -20,9 +20,14 @@ images:
 <div class="gallery-grid" id="gallery-grid">
   {% for photo in site.data.gallery.photos %}
   <div class="gallery-item scroll-reveal" data-cat="{{ photo.category }}">
+    {% if site.shop.enabled and photo.shop_entry %}
+    <a href="{{ '/shop/' | relative_url }}"
+       aria-label="Open the PIER Lab Shop">
+    {% else %}
     <a href="{{ photo.image | relative_url }}"
        data-lightbox="gallery"
        data-title="{{ photo.caption }} — {{ photo.date }}">
+    {% endif %}
       <div class="gallery-photo-wrap">
         <img src="{{ photo.image | relative_url }}"
              alt="{{ photo.caption }}"

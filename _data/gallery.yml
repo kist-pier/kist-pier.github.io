@@ -6,6 +6,7 @@ photos:
     caption: "Pizza on the lawn with Namyun Kim, Seungseop Lee, Taehun Choi, and Wonseok Choi"
     category: "lab-life"
     date: "2026-10-02"
+    shop_entry: true
 
   - image: "/assets/img/gallery/2026-10-02_pre_chuseok_lab_dinner_w_namyun_kim_seungseop_lee_taehun_ch\
       o_02.jpg"

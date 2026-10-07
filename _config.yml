@@ -31,6 +31,12 @@ cms:
   supabase_url: "https://bebtbbhlakjlnhzeeaol.supabase.co"
   supabase_publishable_key: "sb_publishable_hTRWukwmL1hdWaFzuTZiXw_v1e4Xxry"
 
+# The shop is intentionally absent from navigation and is entered through the
+# marked gallery photo. Set enabled to false to restore the photo lightbox.
+shop:
+  enabled: true
+  show_in_navigation: false
+
 # -----------------------------------------------------------------------------
 # Theme
 # -----------------------------------------------------------------------------
