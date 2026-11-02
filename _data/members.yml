@@ -119,6 +119,15 @@ research_interns:
       - "Reinforcement Learning"
     email: "0926187@kist.re.kr"
     github: "https://github.com/sanananan3"
+  - id: "intern-minsob-kim"
+    name_en: "Minseob Kim"
+    name_ko: "김민섭"
+    role: "Intern Researcher"
+    education:
+      - "B.S. Department of Mechanical Engineering, Konkuk University"
+    research_areas:
+      - "Embodied AI-based Humanoid Tactile Sensing"
+    email: "chrisgeorge080402@gmail.com"
 
 undergrad:
   - id: "undergrad-wonseok-choi"
