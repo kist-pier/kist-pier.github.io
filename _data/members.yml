@@ -124,10 +124,11 @@ research_interns:
     name_ko: "김민섭"
     role: "Intern Researcher"
     education:
-      - "B.S. Department of Mechanical Engineering, Konkuk University"
+      - "Department of Mechanical Engineering, Konkuk University"
     research_areas:
       - "Embodied AI-based Humanoid Tactile Sensing"
     email: "chrisgeorge080402@gmail.com"
+    image: /assets/img/members/minsob_kim.jpg
 
 undergrad:
   - id: "undergrad-wonseok-choi"
