@@ -2541,3 +2541,23 @@ html[data-theme="dark"] .publications ol.bibliography li a.citation-link {
     text-decoration: underline;
   }
 }
+
+// Alumni next position: institution first, program details second.
+.alumni-table {
+  .alumni-destination-main {
+    color: $text-light;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .alumni-destination-detail {
+    margin-top: 0.3rem;
+    color: $text-light;
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .alumni-destination-empty {
+    color: $text-muted;
+  }
+}

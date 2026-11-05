@@ -1,0 +1,10 @@
+{% assign destination = include.person.next | strip %}
+{% assign detail = include.person.next_detail | strip %}
+{% if destination != blank %}
+  <div class="alumni-destination-main">{{ destination | escape }}</div>
+  {% if detail != blank %}
+    <div class="alumni-destination-detail">{{ detail | escape }}</div>
+  {% endif %}
+{% else %}
+  <span class="alumni-destination-empty">—</span>
+{% endif %}

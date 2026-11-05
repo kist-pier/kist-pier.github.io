@@ -1346,6 +1346,13 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
         wide: true,
       },
       {
+        name: "next_detail",
+        kind: "text",
+        label: "Next position details (school / lab / sponsorship)",
+        quoted: true,
+        wide: true,
+      },
+      {
         name: "linkedin",
         kind: "text",
         label: "LinkedIn URL",
@@ -1379,6 +1386,13 @@ const DATA_COLLECTIONS: Record<string, DataCollection> = {
         name: "next",
         kind: "text",
         label: "Next position",
+        quoted: true,
+        wide: true,
+      },
+      {
+        name: "next_detail",
+        kind: "text",
+        label: "Next position details (school / lab / sponsorship)",
         quoted: true,
         wide: true,
       },

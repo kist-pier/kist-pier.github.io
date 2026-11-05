@@ -152,22 +152,25 @@ alumni:
       shop_entry: true
       period: "2026.03 ~ 2026.06"
       affiliation: "Department of Artificial Intelligence, Ajou University"
-      next: " "
+      next: ""
 
     - name_en: "Seungseop Lee"
       period: "2025.07 ~ 2026.02"
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
-      next: "M.S. at PIER Lab, KIST (Yonsei University)"
+      next: "KIST · M.S. student"
+      next_detail: "Joint program with Yonsei University"
 
     - name_en: "Jiyeon Joung"
       period: "2025.07 ~ 2026.03"
       affiliation: "Department of Software, Sungkyunkwan University"
-      next: "Intern at Kim Jaechul Graduate School of AI, KAIST"
+      next: "KAIST · Intern"
+      next_detail: "Kim Jaechul Graduate School of AI"
 
     - name_en: "Namyoon Kim"
       period: "2026.01 ~ 2026.02"
       affiliation: "School of Mechanical Engineering, Korea University"
-      next: "M.S. at PIER Lab, KIST (Korea University)"
+      next: "KIST · M.S. student"
+      next_detail: "Joint program with Korea University"
 
   undergrad_alumni:
     - name_en: "Kangyeon Kim"
@@ -193,7 +196,8 @@ alumni:
     - name_en: "Junsoo Park"
       period: "2025.07 ~ 2026.06"
       affiliation: "School of Mechanical Engineering, Sungkyunkwan University"
-      next: "M.S. at Robotics Program, KAIST"
+      next: "KAIST · M.S. program"
+      next_detail: "Robotics Program"
 
     - name_en: "Taekgeun Nam"
       period: "2025.09 ~ 2026.02"
@@ -208,33 +212,34 @@ alumni:
     - name_en: "Dogun Kim"
       period: "2025.07 ~ 2025.12"
       affiliation: "Department of Artificial Intelligence, University of Seoul"
-      next: "M.S. at Cho Chun Shik Graduate School of Mobility, KAIST"
+      next: "KAIST · M.S. program"
+      next_detail: "Cho Chun Shik Graduate School of Mobility"
       linkedin: "https://www.linkedin.com/in/dogun-kim-092bb7345/"
 
     - name_en: "Namyoon Kim"
       period: "2025.03 ~ 2025.12"
       affiliation: "School of Mechanical Engineering, Korea University"
-      next: "M.S. at PIER Lab, KIST (Korea University)"
+      next: "KIST · Research Intern"
 
     - name_en: "Seungseop Lee"
       period: "2024.12 ~ 2025.06"
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
-      next: "M.S. at PIER Lab, KIST (Yonsei University)"
+      next: "KIST · Research Intern"
 
     - name_en: "Jiyeon Joung"
       period: "2024.12 ~ 2025.06"
       affiliation: "Department of Software, Sungkyunkwan University"
-      next: ""
+      next: "KIST · Research Intern"
 
     - name_en: "Geonyoung Ko"
       period: "2024.12 ~ 2025.06"
       affiliation: "Department of Electronic Engineering, Sogang University"
-      next: "M.S.-Ph.D. Integrated Program at Sogang University"
+      next: "Sogang University · Integrated M.S.–Ph.D. program"
 
     - name_en: "Geonwoo Ko"
       period: "2024.09 ~ 2025.02"
       affiliation: "Department of Robotics, Kwangwoon University"
-      next: "Intern at POSCO DX"
+      next: "POSCO DX · Intern"
 
     - name_en: "Youngwook Kim"
       period: "2024.07 ~ 2024.12"
