@@ -5,6 +5,7 @@ title: Publications
 description: Publications by PIER Lab, in reversed chronological order.
 nav: true
 nav_order: 2
+show_citations: true
 ---
 
 <!-- _pages/publications.md -->
@@ -18,3 +19,9 @@ nav_order: 2
 {% bibliography %}
 
 </div>
+
+{% if site.data.citations.metadata.last_updated %}
+<p class="text-muted small mt-4 citation-source">
+  Citation counts from Google Scholar · Last updated: {{ site.data.citations.metadata.last_updated }}
+</p>
+{% endif %}

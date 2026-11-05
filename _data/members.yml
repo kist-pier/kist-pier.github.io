@@ -149,6 +149,7 @@ undergrad:
 alumni:
   intern_alumni:
     - name_en: "Suhyeon Pyo"
+      shop_entry: true
       period: "2026.03 ~ 2026.06"
       affiliation: "Department of Artificial Intelligence, Ajou University"
       next: " "

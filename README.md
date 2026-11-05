@@ -288,7 +288,7 @@ Avoid editing files under `_sass/` other than `_custom.scss` — those are theme
 | New image shows broken on the site but works locally | Filename case mismatch (`Foo.JPG` vs `foo.jpg`). GitHub Pages is case-sensitive; rename to lowercase. |
 | Member photo missing | Ensure both: (1) file copied into `assets/img/members/` and (2) `image:` path in `members.yml` matches exactly. |
 | Publication not appearing on home page | Add `selected = {true}` to the BibTeX entry. |
-| Citation counts wrong / stale | Wait for next nightly run of `update-citations.yml`, or trigger it manually in the Actions tab. |
+| Citation counts wrong / stale | Runs Monday, Wednesday, and Friday at 09:00 KST. Only existing entries with `google_scholar_id` in `_bibliography/papers.bib` are updated. A successful refresh explicitly dispatches the Pages deployment; failed fetches preserve the last successful cache. Unmatched papers have no citation badge. |
 | `docker compose up` errors with port in use | `docker compose down` to release port 8080, then retry. |
 | Build fails on `purgecss` step | Usually a missing CSS file; check `purgecss.config.js` paths and the latest commit. |
 

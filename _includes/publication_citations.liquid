@@ -1,0 +1,11 @@
+      {% if page.show_citations and site.enable_publication_badges.google_scholar and entry.google_scholar_id %}
+        {% assign citation_key = site.data.socials.scholar_userid | append: ':' | append: entry.google_scholar_id %}
+        {% assign citation = site.data.citations.papers[citation_key] %}
+        {% if citation and citation.citations > 0 %}
+          <a class="citation-link"
+             href="https://scholar.google.com/citations?view_op=view_citation&amp;hl=en&amp;user={{ site.data.socials.scholar_userid }}&amp;citation_for_view={{ citation_key }}"
+             target="_blank" rel="noopener noreferrer"
+             title="View on Google Scholar"
+             aria-label="{{ citation.citations }} Google Scholar citations for {{ entry.title | strip_html | escape }} (opens in a new tab)"><span class="citation-count">{{ citation.citations }}</span> <span>{% if citation.citations == 1 %}citation{% else %}citations{% endif %}</span></a>
+        {% endif %}
+      {% endif %}

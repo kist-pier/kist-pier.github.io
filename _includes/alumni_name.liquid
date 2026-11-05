@@ -1,5 +1,7 @@
 {% assign person = include.person %}
-{% if person.linkedin %}
+{% if site.shop.enabled and person.shop_entry %}
+  <a class="alumni-shop-link" href="{{ '/shop/' | relative_url }}" aria-label="{{ person.name_en | escape }} — PIER Lab Shop">{{ person.name_en | escape }}</a>
+{% elsif person.linkedin %}
   <a href="{{ person.linkedin | escape }}" target="_blank" rel="noopener noreferrer">{{ person.name_en | escape }}</a>
 {% else %}
   {{ person.name_en | escape }}
