@@ -1,5 +1,5 @@
 metadata:
-  last_updated: '2026-11-05'
+  last_updated: '2026-11-20'
 papers:
   WveMircAAAAJ:0EnyYjriUFMC:
     citations: 10
@@ -18,7 +18,7 @@ papers:
     title: Whole-body Motion Planning of Dual-Arm Mobile Manipulator for Compensating for Door Reaction Force
     year: '2024'
   WveMircAAAAJ:UeHWp8X0CEIC:
-    citations: 20
+    citations: 21
     title: Reactive Self-Collision Avoidance for a Differentially Driven Mobile Manipulator
     year: '2021'
   WveMircAAAAJ:UebtZRa9Y70C:
@@ -30,7 +30,7 @@ papers:
     title: Motion Planning for Closed-Chain Constraints Based on Probabilistic Roadmap With Improved Connectivity
     year: '2022'
   WveMircAAAAJ:Y0pCki6q_DkC:
-    citations: 53
+    citations: 54
     title: Contact State Estimation for Peg-in-Hole Assembly Using Gaussian Mixture Model
     year: '2022'
   WveMircAAAAJ:YsMSGLbcyi4C:
@@ -70,6 +70,6 @@ papers:
     title: 'Weighted Hierarchical Quadratic Programming: Assigning Individual Joint Weights for Each Task Priority'
     year: '2022'
   WveMircAAAAJ:zYLM7Y9cAGgC:
-    citations: 9
+    citations: 10
     title: Search Trajectory with Twisting Motion for Dual Peg-in-Hole Assembly
     year: '2021'
