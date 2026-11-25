@@ -148,12 +148,6 @@ undergrad:
 
 alumni:
   intern_alumni:
-    - name_en: "Suhyeon Pyo"
-      shop_entry: true
-      period: "2026.03 ~ 2026.06"
-      affiliation: "Department of Artificial Intelligence, Ajou University"
-      next: ""
-
     - name_en: "Seungseop Lee"
       period: "2025.07 ~ 2026.02"
       affiliation: "School of Electrical and Computer Engineering, University of Seoul"
