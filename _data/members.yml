@@ -167,20 +167,10 @@ alumni:
       next_detail: "Joint program with Korea University"
 
   undergrad_alumni:
-    - name_en: "Kangyeon Kim"
-      period: "2026.07 ~ 2026.08"
-      affiliation: "Department of Physics and Mechanical Engineering, Sungkyunkwan University"
-      next: ""
-
     - name_en: "Taehyun Lee"
       period: "2026.03 ~ 2026.06"
       affiliation: "Department of Mechanical and Information Engineering, University of Seoul"
       next: "HD Hyundai Electric"
-
-    - name_en: "Byeol Nam"
-      period: "2026.03 ~ 2026.06"
-      affiliation: "Division of Mechanical and Biomedical Engineering, Ewha Womans University"
-      next: ""
 
     - name_en: "Changwoo Shin"
       period: "2026.01 ~ 2026.06"
@@ -196,12 +186,10 @@ alumni:
     - name_en: "Taekgeun Nam"
       period: "2025.09 ~ 2026.02"
       affiliation: "Department of Mechanical Engineering, KAIST"
-      next: ""
 
     - name_en: "Chanpyo Hong"
       period: "2025.09 ~ 2026.02"
       affiliation: "Department of Mechanical Engineering, KAIST"
-      next: ""
 
     - name_en: "Dogun Kim"
       period: "2025.07 ~ 2025.12"
