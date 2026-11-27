@@ -5,4 +5,4 @@ inline: true
 related_posts: false
 ---
 
-Welcome new members to PIER Lab! M.S. students **Seungseop Lee** (Yonsei Univ.) and **Namyoon Kim** (Korea Univ.), intern researchers **Seungwon Jang** (Kwangwoon Univ.) and **Suhyeon Pyo**, and undergraduate student researchers **Byeol Nam** (Ewha Womans Univ.) and **Taehyun Lee** (Univ. of Seoul) join us from March 2026.
+Welcome new members to PIER Lab! M.S. students **Seungseop Lee** (Yonsei Univ.) and **Namyoon Kim** (Korea Univ.), intern researchers **Seungwon Jang** (Kwangwoon Univ.) and **Taehyun Lee** (Univ. of Seoul) join us from March 2026.
