@@ -6,4 +6,4 @@ inline: true
 related_posts: false
 ---
 
-Welcome our new members to PIER Lab: undergraduate student researchers **Wonseok Choi** (Univ. of Seoul, joined Jun 23) and **Kangyeon Kim** (Sungkyunkwan Univ., joined Jul 2), and intern researcher **Taehun Choi** (Kookmin Univ., joined Jul 2026)!
+Welcome our new members to PIER Lab: undergraduate student researchers **Wonseok Choi** (Univ. of Seoul, joined Jun 23) and intern researcher **Taehun Choi** (Kookmin Univ., joined Jul 2026)!
